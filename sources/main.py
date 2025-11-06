@@ -12,41 +12,6 @@ from main_window.main_window import MainAppWidget
 from base_client import PgsqlClient
 from main_window.exit_dialog import LogoutDialog
 
-class AddWardDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Добавить новую палату")
-        self.setGeometry(200, 200, 300, 200)
-        layout = QVBoxLayout()
-        
-        # Форма для ввода данных
-        form_layout = QFormLayout()
-        form_layout.setContentsMargins(25, 20, 25, 20)
-        self.name_input = QLineEdit()
-        form_layout.addRow("Название палаты:", self.name_input)
-        
-        self.capacity_input = QLineEdit()
-        form_layout.addRow("Вместимость:", self.capacity_input)
-        
-        layout.addLayout(form_layout)
-        
-        # Кнопки
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
-        
-        self.setLayout(layout)
-        self.base_client = PgsqlClient()
-    
-    def get_data(self):
-        return {
-            'name': self.name_input.text(),
-            'max_count': self.capacity_input.text()
-        }
-
 class HospitalApp(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -84,9 +49,17 @@ class HospitalApp(QMainWindow):
 
     def on_logout(self):
         dialog = LogoutDialog(self)
+        dialog.switch_user_clicked.connect(self.logout)
+        dialog.logout_clicked.connect(self.exit)
         dialog.exec()
+
+    def logout(self):
         self.pgsql_client.log_out()
         self.stacked_widget.setCurrentIndex(0)
+
+    def exit(self):
+        self.pgsql_client.log_out()
+        self.close()
 
     def setup_main_interface(self):
         """Настройка интерфейса основного приложения"""
@@ -102,48 +75,6 @@ class HospitalApp(QMainWindow):
             user = user,
             password = password
         )
-    
-    def load_data(self, table_name : str):
-        try:
-            conn = self.get_connection()
-            cursor = conn.cursor()
-            
-            # Выполнение SELECT запроса
-            cursor.execute("SELECT * FROM " + table_name)
-            wards = cursor.fetchall()
-            
-            # Получаем названия колонок
-            column_names = [desc[0] for desc in cursor.description]
-            
-            # Настраиваем таблицу
-            self.table.setRowCount(len(wards))
-            self.table.setColumnCount(len(column_names))
-            self.table.setHorizontalHeaderLabels(column_names)
-            
-            # Заполняем таблицу данными
-            for row_idx, ward in enumerate(wards):
-                for col_idx, value in enumerate(ward):
-                    self.table.setItem(row_idx, col_idx, QTableWidgetItem(str(value)))
-            
-            # Автоподбор размера колонок
-            self.table.resizeColumnsToContents()
-            
-            # Обновляем статус
-            self.status_label.setText(f"Загружено записей: {len(wards)}")
-            
-            cursor.close()
-            conn.close()
-            
-        except Exception as e:
-            QMessageBox.critical(self, "Ошибка", f"Не удалось загрузить данные:\n{str(e)}")
-            self.status_label.setText("Ошибка при загрузке данных")
-    
-    def show_add_dialog(self):
-        """Показывает диалог добавления новой палаты"""
-        dialog = AddWardDialog(self)
-        if dialog.exec():
-            data = dialog.get_data()
-            self.add_ward_to_db(data)
     
     def add_ward_to_db(self, data):
         """Добавляет новую палату в базу данных"""

@@ -18,7 +18,8 @@ class PgsqlClient:
             port = self.db_port,
             database = self.db_base,
             user = self.db_user,
-            password = self.db_pass
+            password = self.db_pass,
+           # client_encoding = 'WIN1251'
         )
     
     def log_in(self, app_username : str, app_password : str) -> bool:
@@ -49,19 +50,50 @@ class PgsqlClient:
                 FROM permissions_table
                 WHERE  table_name = \'{table_name}\'""")
             return cursor.fetchall()
-        pass
 
-    def select(self):
-        pass
+    def select(self, attributes: list[str], table: str) -> tuple:
+        try:
+            with self.connection.cursor() as cursor:
+                query = f"SELECT {', '.join(attributes)} FROM {table}"
+                cursor.execute(query)
+                result = (cursor.fetchall(), cursor.description)
+                self.connection.commit()
+                return result
+        except psycopg2.Error:
+            self.connection.rollback()
+            raise
     
-    def update(self):
-        pass
+    def update(self, attributes: list[str], table: str, data: list[str], id : str):
+        try:
+            with self.connection.cursor() as cursor:
+                result = [f"{k} = '{v}'" for k, v in zip(attributes, data)]
+                query = f"UPDATE {table} SET {', '.join(result)} WHERE id = {id}"
+                cursor.execute(query)
+                self.connection.commit()
+        except psycopg2.Error:
+            self.connection.rollback()
+            raise
     
-    def insert():
-        pass
+    def insert(self, attributes: list[str], table: str, data: list):
+        try:
+            with self.connection.cursor() as cursor:
+                placeholders = ', '.join(['%s'] * len(data))
+                query = f"INSERT INTO {table} ({', '.join(attributes)}) VALUES ({placeholders})"
+                cursor.execute(query, data)
+                self.connection.commit()
+        except psycopg2.Error:
+            self.connection.rollback()
+            raise
     
-    def delete():
-        pass
+    def delete(self, attributes: list[str], table: str):
+        try:
+            with self.connection.cursor() as cursor:
+                query = f"DELETE FROM {table} WHERE id IN ({', '.join(attributes)})"
+                cursor.execute(query)
+                self.connection.commit()
+        except psycopg2.Error:
+            self.connection.rollback()
+            raise
 
 if __name__ == "__main__":
     with open('sources\\config.ini', 'rb') as f:

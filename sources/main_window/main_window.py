@@ -5,9 +5,9 @@ from PyQt6.QtWidgets import (QTabWidget, QHeaderView, QWidget, QVBoxLayout,
                              QFormLayout, QDialog, QDialogButtonBox,
                              QSizePolicy, QToolButton, QMenu, QComboBox)
 from PyQt6.QtGui import QAction
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import pyqtSignal, Qt
 from base_client import PgsqlClient
-
+from main_window.add_patient import AddPatientDialog
 
 class MainAppWidget(QWidget):
     logout_signal = pyqtSignal()
@@ -79,7 +79,105 @@ class MainAppWidget(QWidget):
         
         return nav_layout
 
-class MainTableWidget(QWidget):
+class BasicWidget(QWidget):
+
+    @staticmethod
+    def init_table() -> QTableWidget:
+        table = QTableWidget()
+        table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        horizontal_header = table.horizontalHeader()
+        vertical_header = table.verticalHeader()
+        horizontal_header.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+        vertical_header.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+        table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        return table
+
+    def init_buttons(self) -> QHBoxLayout:
+        buttons_layout = QHBoxLayout()
+
+        self.load_button = QPushButton("Обновить данные")
+        self.load_button.setEnabled(True)
+        self.load_button.setFixedWidth(120)
+        buttons_layout.addWidget(self.load_button)
+        
+        # Кнопки
+        self.insert_button = QPushButton("Добавить запись")
+        self.update_button = QPushButton("Изменить запись") 
+        self.delete_button = QPushButton("Удалить записи")
+        
+        self.insert_button.setEnabled(False)
+        self.update_button.setEnabled(False)
+        self.delete_button.setEnabled(False)
+        self.insert_button.setStyleSheet("color: transparent; background-color: transparent; border: none;")
+        self.update_button.setStyleSheet("color: transparent; background-color: transparent; border: none;")
+        self.delete_button.setStyleSheet("color: transparent; background-color: transparent; border: none;")
+        
+        # Фиксируем ширину для аккуратного вида
+        self.insert_button.setFixedWidth(120)
+        self.update_button.setFixedWidth(120)
+        self.delete_button.setFixedWidth(120)
+        
+        buttons_layout.addWidget(self.insert_button)
+        buttons_layout.addWidget(self.update_button)
+        buttons_layout.addWidget(self.delete_button)
+        buttons_layout.addStretch()
+        
+     #   self.layout().addLayout(buttons_layout)
+        
+        return buttons_layout
+
+    def set_buttons_states(self, rights : list ):
+        if len(rights) != 1:
+            return
+        if rights[0][2]:
+            self.insert_button.setStyleSheet("QPushButton {}")
+            self.insert_button.setEnabled(True)
+        if rights[0][3]:
+            self.update_button.setStyleSheet("QPushButton {}")
+            self.update_button.setEnabled(False)
+        if rights[0][4]:
+            self.delete_button.setStyleSheet("QPushButton {}")
+            self.delete_button.setEnabled(False)
+
+    def update_buttons_states(self, selected_count : int):
+        if selected_count == 1:
+            self.update_button.setEnabled(True)
+            self.delete_button.setEnabled(True)
+        elif selected_count > 1:
+            self.update_button.setEnabled(False)
+            self.delete_button.setEnabled(True)
+        else:
+            self.update_button.setEnabled(False)
+            self.delete_button.setEnabled(False)
+
+    @staticmethod    
+    def get_column_values_from_selected(table : QTableWidget, column : int = 0) -> list[str]:
+        return [table.item(row.row(), column).text() 
+                for row in table.selectionModel().selectedRows()
+                if table.item(row.row(), column) is not None]
+
+    @staticmethod
+    def get_selected_rows_data(table : QTableWidget) -> list[list[str]]:
+        selected_data = []
+        selected_indexes = table.selectionModel().selectedRows()
+
+        for index in selected_indexes:
+            row = index.row()
+            row_data = []
+
+            for col in range(table.columnCount()):
+                item = table.item(row, col)
+                if item is not None:
+                    row_data.append(item.text())
+                else:
+                    row_data.append("")
+        
+            selected_data.append(row_data)
+        
+        return selected_data
+
+class MainTableWidget(BasicWidget):
     def __init__(self, db_client : PgsqlClient):
         super().__init__()
         self.pgsql_client = db_client
@@ -92,34 +190,28 @@ class MainTableWidget(QWidget):
         title_label.setStyleSheet("font-size: 16px; font-weight: bold; margin: 10px;")
         layout.addWidget(title_label)
         
-
         # Панель кнопок
-        self.buttons_layout = init_buttons(self)
-        #self.update_button.setStyleSheet("color: transparent; background-color: transparent; border: none;")
+        self.buttons_layout = self.init_buttons()
+        self.layout().addLayout(self.buttons_layout)
         
         # Таблица для отображения данных
         self.table = setup_table()
+        self.table.itemSelectionChanged.connect(lambda: self.update_buttons_states(len(self.table.selectionModel().selectedRows())))
         layout.addWidget(self.table)
 
         
         # Статус
         self.status_label = QLabel("Нажмите кнопку для загрузки данных")
         layout.addWidget(self.status_label)
-#        central_widget.setLayout(layout)
         
-        conn = self.get_connection("postgres", "159753")
-        cursor = conn.cursor()
-        
-        # Выполнение SELECT запроса
-        cursor.execute("SELECT * FROM people_explicit")
-        data = cursor.fetchall()
-        description = cursor.description
-        cursor.close()
-        conn.close()
         # Загружаем данные при старте
-
-        rights = self.pgsql_client.get_table_rights("people_explicit")
-        set_buttons_rights(self, rights)
+        data, description = self.pgsql_client.select(['*'], 'people_view')
+        rights = self.pgsql_client.get_table_rights("people_view")
+        self.set_buttons_states(rights)
+        self.load_button.clicked.connect(self.load_data)
+        self.update_button.clicked.connect(lambda: self.show_add_dialog(self.get_selected_rows_data(self.table)))
+        self.insert_button.clicked.connect(lambda: self.show_add_dialog())
+        self.delete_button.clicked.connect(self.delete_rows)
         self.show_data(data, description)
         
     def show_data(self, data, description):
@@ -154,13 +246,38 @@ class MainTableWidget(QWidget):
             password = password
         )
 
-    def show_add_dialog(self):
-        dialog = AddWardDialog(self)
+    def show_add_dialog(self, old : list[list[str]] = None):
+        if old is None or len(old) == 0:
+            data = None
+        else:
+            data = {
+                "id" : old[0][0],
+                "first_name" : old[0][1],
+                "last_name" : old[0][2],
+                "father_name" : old[0][3],
+                "diagnosis" : old[0][4],
+                "ward" : old[0][5]
+            }
+        dialog = AddPatientDialog(self.pgsql_client, data)
         if dialog.exec():
-            data = dialog.get_data()
-            self.add_ward_to_db(data)
+            data = dialog.get_new_data()
+            dialog.add_patient(data)
+        data, description = self.pgsql_client.select(['*'], 'people_view')
+        self.table.clearSelection()
+        self.show_data(data, description)
 
-class DirectoriesWidget(QWidget):
+    def load_data(self):
+        data, description = self.pgsql_client.select(['*'], 'people_view')
+        self.show_data(data, description)
+
+    def delete_rows(self):
+        ids = self.get_column_values_from_selected(self.table)
+        self.pgsql_client.delete(ids, 'people_view')
+        data, description = self.pgsql_client.select(['*'], 'people_view')
+        self.table.clearSelection()
+        self.show_data(data, description)
+
+class DirectoriesWidget(BasicWidget):
     def __init__(self, db_client : PgsqlClient):
         super().__init__()
         self.pgsql_client = db_client
@@ -173,7 +290,8 @@ class DirectoriesWidget(QWidget):
         
 
         # Панель кнопок
-        self.buttons_layout = init_buttons(self)
+        self.buttons_layout = self.init_buttons()
+        self.layout().addLayout(self.buttons_layout)
 
         self.tool_btn = QToolButton()
         self.tool_btn.setText("Справочники")  # Текст кнопки
@@ -203,7 +321,7 @@ class DirectoriesWidget(QWidget):
         layout.addWidget(self.status_label)
 
         rights = self.pgsql_client.get_table_rights("wards")
-        set_buttons_rights(self, rights)
+        self.set_buttons_states(rights)
         self.get_data("wards")
     
     def get_data(self, table : str):
@@ -251,7 +369,7 @@ class DirectoriesWidget(QWidget):
             password = password
         )
 
-class ReportsWidget(QWidget):
+class ReportsWidget(BasicWidget):
     def __init__(self, db_client : PgsqlClient):
         super().__init__()
 
@@ -277,125 +395,9 @@ class ReportsWidget(QWidget):
             QMessageBox.critical(self, "Ошибка", f"Не удалось загрузить данные:\n{str(e)}")
             self.status_label.setText("Ошибка при загрузке данных")
 
-class AddWardDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Добавление пациента")
-        self.setGeometry(200, 200, 300, 200)
-        
-        layout = QVBoxLayout()
-        
-        # Форма для ввода данных
-        form_layout = QFormLayout()
-        
-        self.first_name_input = QLineEdit()
-        self.last_name_input = QLineEdit()
-        self.father_name_input = QLineEdit()
-        
-        self.ward_combo = QComboBox()
-        data = self.get_data("SELECT id, name, diagnosis_id FROM wards")
-        wards_map = {}
-        for i in data:
-            wards_map[i[1]] = (i[0], i[2])
-            self.ward_combo.addItem(i[1])
-
-        self.diagnosis_combo = QComboBox()
-        data = self.get_data("SELECT id, name FROM diagnosis")
-        diagnosis_map = {}
-        for i in data:
-            diagnosis_map[i[1]] = i[0]
-            self.diagnosis_combo.addItem(i[1])
-
-
-   #     self.diagnosis_combo = QComboBox()
-
-        form_layout.addRow("Имя:", self.first_name_input)        
-        form_layout.addRow("Фамилия:", self.last_name_input)
-        form_layout.addRow("Отчетство:", self.father_name_input)
-        form_layout.addRow("Диагноз:", self.diagnosis_combo)
-        form_layout.addRow("Палата:", self.ward_combo)
-
-        
-        layout.addLayout(form_layout)
-        
-        # Кнопки
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
-        
-        self.setLayout(layout)
-    
-    def get_new_data(self):
-        return {
-            'first_name': self.first_name_input.text(),
-            'last_name': self.last_name_input.text(),
-            'father_name': self.father_name_input.text(),
-            'ward_id': self.ward_combo.currentData()
-        }
-    def add_ward_to_db(self, data):
-        """Добавляет новую палату в базу данных"""
-        try:
-            # Проверяем обязательные поля
-            if not data['name'] or not data['max_count']:
-                QMessageBox.warning(self, "Ошибка", "Заполните все поля!")
-                return
-            
-            # Проверяем, что вместимость - число
-            try:
-                capacity = int(data['max_count'])
-            except ValueError:
-                QMessageBox.warning(self, "Ошибка", "Вместимость должна быть числом!")
-                return
-            
-            conn = self.get_connection()
-            cursor = conn.cursor()
-            
-            # Выполняем INSERT запрос
-            cursor.execute(
-                "INSERT INTO wards (name, max_count) VALUES (%s, %s)",
-                (data['name'], capacity)
-            )
-            
-            # Подтверждаем изменения
-            conn.commit()
-            
-            # Обновляем таблицу
-            self.load_wards_data()
-            
-            QMessageBox.information(self, "Успех", "Палата успешно добавлена!")
-            
-            cursor.close()
-            conn.close()
-            
-        except psycopg2.Error as e:
-            QMessageBox.critical(self, "Ошибка базы данных", f"Ошибка при добавлении:\n{str(e)}")
-        except Exception as e:
-            QMessageBox.critical(self, "Ошибка", f"Неизвестная ошибка:\n{str(e)}")
-
-    def get_data(self, request : str):
-        conn = self.get_connection("postgres", "159753")
-        cursor = conn.cursor()
-        
-        cursor.execute(request)
-        data = cursor.fetchall()
-        cursor.close()
-        conn.close()
-        return data
-    
-    def get_connection(self, user : str, password : str):
-        """Создает и возвращает соединение с базой данных"""
-        return psycopg2.connect(
-            host="localhost",
-            port = 5432,
-            database="hospital",
-            user = user,
-            password = password
-        )
-    
-
 def setup_table() -> QTableWidget:
     table = QTableWidget()
+    table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
     table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
     horizontal_header = table.horizontalHeader()
     vertical_header = table.verticalHeader()
@@ -404,54 +406,88 @@ def setup_table() -> QTableWidget:
     table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
     return table
 
+# def init_buttons(widget : QWidget) -> QHBoxLayout:
+#     #can_insert, can_update, can_delete = cursor.fetchone()
+    
+#     # Вертикальный layout
+#     buttons_layout = QHBoxLayout()
+# #    buttons_layout.setSpacing(5)
 
-def init_buttons(widget : QWidget) -> QHBoxLayout:
-    #can_insert, can_update, can_delete = cursor.fetchone()
+#     widget.load_button = QPushButton("Обновить данные")
+#     widget.load_button.setEnabled(True)
+#     widget.load_button.setFixedWidth(120)
+#     buttons_layout.addWidget(widget.load_button)
     
-    # Вертикальный layout
-    buttons_layout = QHBoxLayout()
-#    buttons_layout.setSpacing(5)
+#     # Кнопки
+#     widget.insert_button = QPushButton("Добавить запись")
+#     widget.update_button = QPushButton("Изменить запись") 
+#     widget.delete_button = QPushButton("Удалить записи")
+    
+#     widget.insert_button.setEnabled(False)
+#     widget.update_button.setEnabled(False)
+#     widget.delete_button.setEnabled(False)
+#     widget.insert_button.setStyleSheet("color: transparent; background-color: transparent; border: none;")
+#     widget.update_button.setStyleSheet("color: transparent; background-color: transparent; border: none;")
+#     widget.delete_button.setStyleSheet("color: transparent; background-color: transparent; border: none;")
+    
+#     # Фиксируем ширину для аккуратного вида
+#     widget.insert_button.setFixedWidth(120)
+#     widget.update_button.setFixedWidth(120)
+#     widget.delete_button.setFixedWidth(120)
+    
+#     buttons_layout.addWidget(widget.insert_button)
+#     buttons_layout.addWidget(widget.update_button)
+#     buttons_layout.addWidget(widget.delete_button)
+#     buttons_layout.addStretch()
+    
+#     widget.layout().addLayout(buttons_layout)
+    
+#     return buttons_layout
 
-    widget.load_button = QPushButton("Обновить данные")
-    widget.load_button.setEnabled(True)
-    widget.load_button.setFixedWidth(120)
-    buttons_layout.addWidget(widget.load_button)
-    
-    # Кнопки
-    widget.insert_button = QPushButton("Добавить запись")
-    widget.update_button = QPushButton("Изменить запись") 
-    widget.delete_button = QPushButton("Удалить записи")
-    
-    widget.insert_button.setEnabled(False)
-    widget.update_button.setEnabled(False)
-    widget.delete_button.setEnabled(False)
-    widget.insert_button.setStyleSheet("color: transparent; background-color: transparent; border: none;")
-    widget.update_button.setStyleSheet("color: transparent; background-color: transparent; border: none;")
-    widget.delete_button.setStyleSheet("color: transparent; background-color: transparent; border: none;")
-    
-    # Фиксируем ширину для аккуратного вида
-    widget.insert_button.setFixedWidth(120)
-    widget.update_button.setFixedWidth(120)
-    widget.delete_button.setFixedWidth(120)
-    
-    buttons_layout.addWidget(widget.insert_button)
-    buttons_layout.addWidget(widget.update_button)
-    buttons_layout.addWidget(widget.delete_button)
-    buttons_layout.addStretch()
-    
-    widget.layout().addLayout(buttons_layout)
-    
-    return buttons_layout
+# def set_buttons_states(widget : QWidget, rights : list ):
+#     if len(rights) != 1:
+#         return
+#     if rights[0][2]:
+#         widget.insert_button.setStyleSheet("QPushButton {}")
+#         widget.insert_button.setEnabled(True)
+#     if rights[0][3]:
+#         widget.update_button.setStyleSheet("QPushButton {}")
+#         widget.update_button.setEnabled(False)
+#     if rights[0][4]:
+#         widget.delete_button.setStyleSheet("QPushButton {}")
+#         widget.delete_button.setEnabled(False)
 
-def set_buttons_rights(widget : QWidget, rights : list ):
-    if len(rights) != 1:
-        return
-    if rights[0][2]:
-        widget.insert_button.setStyleSheet("QPushButton {}")
-        widget.insert_button.setEnabled(True)
-    if rights[0][3]:
-        widget.update_button.setStyleSheet("QPushButton {}")
-        widget.update_button.setEnabled(True)
-    if rights[0][4]:
-        widget.delete_button.setStyleSheet("QPushButton {}")
-        widget.delete_button.setEnabled(True)
+# def update_buttons_states(widget : QWidget, selected_count : int):
+#     if selected_count == 1:
+#         widget.update_button.setEnabled(True)
+#         widget.delete_button.setEnabled(True)
+#     elif selected_count > 1:
+#         widget.update_button.setEnabled(False)
+#         widget.delete_button.setEnabled(True)
+#     else:
+#         widget.update_button.setEnabled(False)
+#         widget.delete_button.setEnabled(False)
+    
+# def get_column_values_from_selected(table : QTableWidget, column : int = 0) -> list[str]:
+#     return [table.item(row.row(), column).text() 
+#             for row in table.selectionModel().selectedRows()
+#             if table.item(row.row(), column) is not None]
+
+# def get_selected_rows_data(table : QTableWidget) -> list[list[str]]:
+    selected_data = []
+    selected_indexes = table.selectionModel().selectedRows()
+
+    for index in selected_indexes:
+        row = index.row()
+        row_data = []
+
+        for col in range(table.columnCount()):
+            item = table.item(row, col)
+            if item is not None:
+                row_data.append(item.text())
+            else:
+                row_data.append("")
+    
+        selected_data.append(row_data)
+    
+    return selected_data
