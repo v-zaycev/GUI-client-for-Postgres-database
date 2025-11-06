@@ -7,9 +7,7 @@ class LogoutDialog(QDialog):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setup_ui()
         
-    def setup_ui(self):
         self.setWindowTitle("Завершение работы")
         self.setFixedSize(220, 140)  # Уменьшил высоту окна
         self.setModal(True)

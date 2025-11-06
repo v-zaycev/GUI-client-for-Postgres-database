@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (QTabWidget, QHeaderView, QWidget, QVBoxLayout,
 from PyQt6.QtGui import QAction
 from PyQt6.QtCore import pyqtSignal, Qt
 from base_client import PgsqlClient
-from main_window.add_patient import AddPatientDialog
+from sources.main_window.patient_edit_dialog import AddPatientDialog
 
 class MainAppWidget(QWidget):
     logout_signal = pyqtSignal()
