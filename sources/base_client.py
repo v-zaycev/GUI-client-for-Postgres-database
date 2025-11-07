@@ -43,13 +43,22 @@ class PgsqlClient:
         with self.connection.cursor() as cursor:
             cursor.execute("SET ROLE waitroom_role")
     
-    def get_table_rights(self, table_name : str) -> list:
+    def get_table_rights(self, table_name : str) -> dict:
         with self.connection.cursor() as cursor:
             cursor.execute(f"""
                 SELECT * 
                 FROM permissions_table
                 WHERE  table_name = \'{table_name}\'""")
-            return cursor.fetchall()
+            data = cursor.fetchall()
+            if len(data) != 1:
+                return None
+            result = {
+                "select" : data[0][1],
+                "insert" : data[0][2],
+                "update" : data[0][3],
+                "delete" : data[0][4]
+            }
+            return result
 
     def select(self, attributes: list[str], table: str) -> tuple:
         try:

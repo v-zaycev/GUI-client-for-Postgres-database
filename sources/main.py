@@ -18,7 +18,8 @@ class HospitalApp(QMainWindow):
         self.pgsql_client = PgsqlClient()
         self.setWindowTitle("Hospital")
 
-        self.setGeometry(100, 100, 800, 600)
+        self.resize(800, 600)
+        #self.setGeometry(100, 100, 800, 600)
         self.stacked_widget = QStackedWidget()
         self.setCentralWidget(self.stacked_widget)
         self.login_widget = LoginWidget(self.pgsql_client)
@@ -32,7 +33,6 @@ class HospitalApp(QMainWindow):
         # Создаем основное приложение
         self.main_app_widget = MainAppWidget(self.pgsql_client)
         self.main_app_widget.logout_signal.connect(self.on_logout)
-        #self.main_app_widget.logout_request.connect(self.on_logout)
         
         # Добавляем в стек (теперь индекс 1)
         self.stacked_widget.addWidget(self.main_app_widget)
@@ -56,6 +56,8 @@ class HospitalApp(QMainWindow):
     def logout(self):
         self.pgsql_client.log_out()
         self.stacked_widget.setCurrentIndex(0)
+        self.stacked_widget.removeWidget(self.main_app_widget)
+        self.main_app_widget = None
 
     def exit(self):
         self.pgsql_client.log_out()

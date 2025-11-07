@@ -1,9 +1,7 @@
 import psycopg2
-from PyQt6.QtWidgets import (QTabWidget, QHeaderView, QWidget, QVBoxLayout, 
-                             QTableWidget, QTableWidgetItem, QPushButton, 
-                             QLabel, QMessageBox, QHBoxLayout, QLineEdit,
+from PyQt6.QtWidgets import (QVBoxLayout, QMessageBox, QLineEdit,
                              QFormLayout, QDialog, QDialogButtonBox,
-                             QSizePolicy, QToolButton, QMenu, QComboBox)
+                             QComboBox)
 from PyQt6.QtGui import QAction
 from PyQt6.QtCore import pyqtSignal
 from base_client import PgsqlClient
@@ -19,7 +17,8 @@ class AddPatientDialog(QDialog):
             self.addition = False
             self.setWindowTitle("Изменение пациента")
             self.id = old["id"]
-        self.setGeometry(200, 200, 300, 200)
+        self.resize(300, 200)
+        #self.setGeometry(200, 200, 300, 200)
         
         layout = QVBoxLayout()
         
@@ -27,8 +26,11 @@ class AddPatientDialog(QDialog):
         form_layout = QFormLayout()
         
         self.first_name_input = QLineEdit()
+        self.first_name_input.setMaxLength(20)
         self.last_name_input = QLineEdit()
+        self.last_name_input.setMaxLength(20)
         self.father_name_input = QLineEdit()
+        self.father_name_input.setMaxLength(20)
 
         self.ward_combo = QComboBox()
         data, description = self.pgsql_client.select(['id', 'name'], 'wards_view')
