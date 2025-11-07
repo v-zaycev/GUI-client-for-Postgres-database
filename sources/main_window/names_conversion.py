@@ -15,8 +15,23 @@ names_conversion = {
         "diagnosis" : "Диагноз",
     },
 
-    "diagnosis" : {
-        "id" : "id",
-        "name" : "Диагноз",
+    "ward_occupancy_report" : {
+        "ward_name" : "Палата",
+        "diagnosis_name" : "Диагноз",
+        "max_count" : "Вместимость",
+        "current_patients" : "Пациентов",
+        "free_beds" : "Свободных коек",
+        "occupancy_percent" : "Заполненность",
+    },
+
+    "diagnosis_statistics" : {
+        "diagnosis_name" : "Диагноз",
+        "patient_count" : "Число пациентов",
+        "wards_count" : "Всего палат",
+        "total_capacity" : "Всего коек",
+        "free_beds" : "Свободных коек",
+        "occupancy_percent" : "Заполненность",
+        "percentage_of_total" : "Доля от всех больных"
     }
+
 }

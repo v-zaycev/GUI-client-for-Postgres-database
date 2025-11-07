@@ -17,9 +17,8 @@ class HospitalApp(QMainWindow):
         super().__init__()
         self.pgsql_client = PgsqlClient()
         self.setWindowTitle("Hospital")
-
         self.resize(800, 600)
-        #self.setGeometry(100, 100, 800, 600)
+        
         self.stacked_widget = QStackedWidget()
         self.setCentralWidget(self.stacked_widget)
         self.login_widget = LoginWidget(self.pgsql_client)
