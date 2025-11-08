@@ -30,7 +30,12 @@ class PgsqlClient:
                 result = bcrypt.checkpw(bytes(app_password, "utf-8"), bytes(users_hash[0][0], "utf-8"))
                 if result:
                     print("success log")
-                    cursor.execute(f"CALL set_role(\'{app_username}\')")
+                    if app_username == 'basic_user':
+                        cursor.execute(f"SET ROLE basic_role")
+                        self.connection.commit()
+                    elif app_username == 'advanced_user':
+                        cursor.execute(f"SET ROLE advanced_role")
+                        self.connection.commit()
                     return True
                 else:
                     print("incorrect password")

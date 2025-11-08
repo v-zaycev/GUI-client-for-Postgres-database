@@ -1,0 +1,524 @@
+\documentclass[specialist,
+substylefile = spbu_report.rtx,
+subf,href,colorlinks=true, 12pt]{disser}
+
+\usepackage[a4paper,
+mag=1000, includefoot,
+left=1.5cm, right=1.5cm, top=2cm, bottom=2cm, headsep=1cm, footskip=1cm]{geometry}
+
+\usepackage{color}
+\definecolor{black}{RGB}{0,0,0}
+
+%\usepackage{hyperref}
+\usepackage{mathtext}
+\usepackage{outlines}
+\usepackage{amsmath,amssymb,amsthm,amscd,amsfonts}
+\usepackage{cmap}
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[russian]{babel}
+\usepackage{euscript}
+\usepackage{mathdots}
+\usepackage{graphicx}
+%\usepackage[colorlinks,citecolor=black, linkcolor=black]{hyperref}
+\usepackage[russian]{cleveref}
+\usepackage{epstopdf}
+\usepackage{longtable} 
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{wrapfig}
+\usepackage{caption}
+\usepackage{esdiff}
+\usepackage{mathtools, bigstrut}
+\usepackage[shortlabels]{enumitem}
+\usepackage{listings}
+\usepackage{setspace}
+\usepackage{xcolor}
+
+
+\usepackage{epstopdf}
+\usepackage{array}
+
+
+\newtheorem*{theorem}{Теорема}
+\newtheorem*{Corollary}{Следствие}
+\newtheorem*{Remark}{Замечание}
+\newtheorem*{Lemma}{Лемма}
+\newtheorem*{Definition}{Определение}
+\newcommand*\rfrac[2]{{}^{#1}\!/_{#2}}
+%\newcommand{\tg}[1]{\mathrm{tg} \left(#1\right)}
+\sectionfont{\fontsize{18}{15}\selectfont}
+\subsectionfont{\fontsize{16}{13}\selectfont}
+\subsubsectionfont{\fontsize{14}{11}\selectfont}
+%\DeclareMathOperator{\deter}{det}
+\DeclareMathOperator{\rk}{rk}
+\DeclareMathOperator{\re}{Re}
+\DeclareMathOperator{\im}{Im}
+%\DeclareMathOperator{\arctg}{arctg}
+
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+%Code listing style named "mystyle"
+\lstdefinestyle{mystyle}{
+	backgroundcolor=\color{backcolour}, commentstyle=\color{codegreen},
+	keywordstyle=\color{red},
+	numberstyle=\tiny\color{codegray},
+	stringstyle=\color{blue},
+	basicstyle=\ttfamily\footnotesize,
+	breakatwhitespace=false,         
+	breaklines=true,                 
+	captionpos=b,                    
+	keepspaces=true,                 
+	numbers=left,                    
+	numbersep=5pt,                  
+	showspaces=false,                
+	showstringspaces=false,
+	showtabs=false,                  
+	tabsize=2
+}
+
+%"mystyle" code listing set
+\lstset{style=mystyle}
+
+
+\AtBeginDocument{\addtocontents{toc}{\protect\thispagestyle{plain}}} 
+\setcounter{tocdepth}{2}
+%\linespread{1} 
+\begin{document}
+	
+	%
+	% Титульный лист на русском языке
+	%
+	% Название организации
+	\institution{%		
+		\begin{spacing}{1}
+			Министерство науки и высшего образования Российской Федерации\\
+			\textbf{--------------------------------}\\
+			Санкт-Петербургский политехнический университет Петра Великого\\
+			Высшая школа программной инженерии
+		\end{spacing}
+	}
+	
+	\title{\textbf{КУРСОВАЯ РАБОТА}}
+	
+	% Тема
+	\topic{по дисциплине «Базы данных»\\		
+		\textbf{\\Графический интерфейс пользователя для базы данных «Госпиталь»}}
+	
+	% Автор
+	\author{Зайцев В.А.}
+	\group{студент гр. 5130904/30103}
+	
+	% Научный руководитель
+	\sa       {Прокофьев О.В.}
+	%\sastatus {проф, д.т.н. }
+	
+	% Город и год
+	\city{Санкт-Петербург}
+	\date{\number\year}
+	
+	\maketitle
+	\pagestyle{plain}
+	\newpage
+	\tableofcontents
+	
+	\section{Задание}
+	\section{Пользователи базы данных}
+	\section{Работа интерфейса}
+	\section{Вывод}
+	\section{Список литературы}	
+	\begin{center}
+		\textbf{Ведомый контроллер SPI}
+	\end{center}
+	Контроллер для приёма данных от внешних устройств по последовательному интерфейсу SPI. Контроллер принимает по шине SPI байт данных и передаёт его в управляемый модуль. После приёма сигнал valid находится в состоянии «1» в течение одного такта.\\
+	\indent\textbf{Входные сигналы:}\vspace{-10pt}
+	\begin{spacing}{1.2}
+		\begin{lstlisting}[numbers=none]
+			bool sclk,mosi,ss_n;	\end{lstlisting}
+	\end{spacing}
+	\textbf{Выходные сигналы:} \vspace{-10pt}
+	\begin{spacing}{1.2}
+		\begin{lstlisting}[numbers=none]
+			bool miso;
+			sc_uint<8> data;
+			bool valid;	\end{lstlisting}
+	\end{spacing}	
+	\textbf{Логика:}\\
+	\indent последовательная и комбинационная\\
+	\indent\textbf{Пример временной диаграммы:}\\
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics{o.png}
+	\end{figure}
+	\newpage
+	\noindent\textbf{Программная реализация на SystemC алгоритма Ведомый контроллер SPI}
+	
+	SPISlave.h  \vspace{-10pt}
+	\begin{spacing}{1.2}
+		\begin{lstlisting}[language=C++]
+			#ifndef SPISLAVE_H
+			#define SPISLAVE_H
+			#include <systemc.h>
+			
+			SC_MODULE(SPISlave)
+			{
+				/*** INPUT SIGNALS: ***/
+				sc_in<bool> reset;
+				sc_in<bool> sclk;
+				sc_in<bool> mosi;
+				sc_in<bool> ss;
+				/*** OUTPUT SIGNALS: ***/
+				sc_out<bool> miso;
+				sc_out<bool> valid;
+				sc_out<sc_uint<8>> data;
+				/*** INTERNAL SIGNALS: ***/
+				sc_signal<bool> ss_int;
+				sc_signal<sc_uint<8> > buffer;
+				// methods
+				void set_outputs();
+				void update_buffer();
+				void update_ss();
+				// constructor of module
+				SC_CTOR(SPISlave)
+				{
+					SC_METHOD(update_buffer);
+					sensitive_pos << reset;
+					sensitive_neg << sclk;
+					SC_METHOD(set_outputs);
+					sensitive_pos << sclk << reset;
+					SC_METHOD(update_ss);
+					sensitive_pos << sclk;
+				}
+			};
+			#endif // SPISLAVE_H
+		\end{lstlisting}
+	\end{spacing}
+	
+	SPISlave.cpp \vspace{-10pt}
+	\begin{spacing}{1.2}
+		\begin{lstlisting}[language=C++]
+			#include "SPISlave.h"
+			
+			void SPISlave::update_buffer()
+			{
+				if(reset)
+				{
+					buffer.write(0);
+				}
+				else
+				{
+					if (!ss.read())
+					{
+						buffer.write((sc_uint<8>(mosi.read()) << 7) | (buffer.read() >> 1));
+					}
+				}
+			}
+			
+			void SPISlave::update_ss()
+			{
+				if (ss.read())
+				{
+					ss_int.write(1);
+				}
+				else
+				{
+					ss_int.write(0);
+				}
+			}
+			
+			void SPISlave::set_outputs()
+			{
+				miso.write(buffer.read() & 1);
+				data.write(buffer.read());
+				if (reset)
+				{
+					valid.write(0);
+				}
+				else
+				{
+					if (!ss_int.read())
+					{
+						if (ss.read())
+						{
+							valid.write(1);
+						}
+						else
+						{
+							valid.write(0);
+						}
+					}
+					else
+					{
+						valid.write(0);
+					}
+				}
+			}
+		\end{lstlisting}
+	\end{spacing}
+	
+	
+	Test.h \vspace{-10pt}
+	\begin{spacing}{1.2}
+		\begin{lstlisting}[language=C++]
+			#ifndef TEST_H
+			#define TEST_H
+			#include <iostream>
+			#include <systemc.h>
+			
+			SC_MODULE(Test)
+			{
+				/*** interface signals ***/
+				sc_in<bool> sclk;
+				sc_in<bool> valid;
+				sc_in<sc_uint<8> > data;
+				sc_out<bool> reset;
+				sc_out<bool> mosi;
+				sc_out<bool> ss;
+				// internal values
+				unsigned int counter;
+				unsigned char vals[10] = { 10, 29, 57, 255, 128, 185, 0, 1, 2, 3 };
+				// SC_THREAD: generates reset, ss and mosi signals
+				void generate_command();
+				// SC_METHOD: checks that data is same as expected
+				void check_data();
+				// constructor of test bench
+				SC_CTOR(Test):
+				counter(0)
+				{
+					SC_THREAD(generate_command);
+					sensitive_pos << sclk;
+					SC_METHOD(check_data);
+					dont_initialize();
+					sensitive_pos << valid;
+				}
+			};
+			#endif // TEST_H
+		\end{lstlisting}
+	\end{spacing}
+	
+	Test.cpp \vspace{-10pt}
+	\begin{spacing}{1.2}
+		\begin{lstlisting}[language=C++]
+			#include "Test.h"
+			
+			void Test::generate_command()
+			{
+				reset.write(1);
+				ss.write(1);
+				wait(50, SC_NS);
+				reset.write(0);
+				wait(100, SC_NS);
+				while (counter < 10)
+				{
+					int tmp = vals[counter];
+					ss.write(0);
+					wait();
+					for (int i = 0; i < 8; ++i)
+					{
+						mosi.write(tmp & 1);
+						tmp >>= 1;
+						wait();
+					}
+					ss.write(1);
+					wait(200, SC_NS);
+				}
+			}
+			void Test::check_data()
+			{
+				if (vals[counter] != data.read())
+				{
+					std::cerr << "Error at" << sc_time_stamp() << ": SPI returned " << data.read();
+					std::cerr << " when expected " << vals[counter] << std::endl;
+				}
+				++counter;
+			}
+		\end{lstlisting}
+	\end{spacing}
+	
+	main.cpp \vspace{-10pt}
+	\begin{spacing}{1.2}
+		\begin{lstlisting}[language=C++]
+			#include <systemc.h>
+			#include "Test.h"
+			#include "SPISlave.h"
+			
+			int sc_main(int argc, char* argv[])
+			{
+				// create modules
+				SPISlave module("SPI");
+				Test test("SPI_test");
+				//create 200MHz clock
+				sc_clock s_sclk("sclk", 5, SC_NS);
+				// create signals
+				sc_signal<bool> s_reset("reset");
+				sc_signal<bool> s_miso("miso");
+				sc_signal<bool> s_mosi("mosi");
+				sc_signal<sc_uint<8> > s_data("data");
+				sc_signal<bool> s_valid("valid");
+				sc_signal<bool> s_ss("ss");
+				// connect signals
+				test.sclk(s_sclk);
+				test.reset(s_reset);
+				test.mosi(s_mosi);
+				test.ss(s_ss);
+				test.data(s_data);
+				test.valid(s_valid);
+				module.sclk(s_sclk);
+				module.reset(s_reset);
+				module.mosi(s_mosi);
+				module.miso(s_miso);
+				module.valid(s_valid);
+				module.data(s_data);
+				module.ss(s_ss);
+				// create output trace file
+				sc_trace_file* tf = sc_create_vcd_trace_file("SPI");
+				tf->set_time_unit(1, SC_NS);
+				sc_trace(tf, s_sclk,  "sclk");
+				sc_trace(tf, s_reset, "reset");
+				sc_trace(tf, s_ss,    "ss");
+				sc_trace(tf, s_mosi,  "mosi");
+				sc_trace(tf, s_miso,  "miso");
+				sc_trace(tf, s_valid, "valid");
+				sc_trace(tf, s_data,  "data");
+				sc_start(10000, SC_NS);
+				sc_close_vcd_trace_file(tf);
+				return 0;
+			}	
+		\end{lstlisting}
+	\end{spacing}
+	\noindent\textbf{Тестирование симуляцией}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\textwidth]{i1.png}
+	\end{figure}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\textwidth]{i2.png}
+	\end{figure}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\textwidth]{i3.png}
+	\end{figure}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\textwidth]{i4.png}
+	\end{figure}
+	
+	\noindent\textbf{Аппаратная реализация на Verilog HDL алгоритма Ведомый контроллер SPI}
+	
+	\begin{spacing}{1.2}
+		\begin{lstlisting}[language=Verilog]
+			module SPISlave(data,valid,miso,ss,mosi,sclk,reset);
+			output [7:0] data;
+			output valid;
+			output miso;
+			input ss;
+			input mosi;
+			input sclk;
+			input reset;
+			
+			reg [7:0] data;
+			reg valid;
+			reg miso;
+			
+			reg [7:0] buffer;
+			reg ss_int;
+			
+			//update_ss:
+			always @(posedge sclk )
+			begin
+			if (ss ) begin
+			ss_int  <=(1);
+			end
+			else begin
+			ss_int  <=(0);
+			end
+			end
+			
+			//set_outputs:
+			always @(posedge reset or posedge sclk ) begin
+			miso  <=(buffer &1);
+			data  <=(buffer );
+			if (reset )	begin
+			valid  <=(0);
+			end
+			else begin
+			if (!ss_int ) begin
+			if (ss ) begin
+			valid  <=(1);
+			end
+			else begin
+			valid  <=(0);
+			end	
+			end
+			else begin
+			valid  <=(0);
+			end
+			end
+			end
+			
+			//update_buffer:
+			always @(negedge sclk or posedge reset ) begin
+			if (reset )	begin
+			buffer  <=(0);
+			end
+			else begin
+			if (!ss ) begin
+			buffer  <=(((mosi )<<7)|(buffer >>1));
+			end
+			end
+			end
+			endmodule
+			
+		\end{lstlisting}
+	\end{spacing}
+	
+	\noindent\textbf{Тестирование симуляцией}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\textwidth]{g1.png}
+	\end{figure}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\textwidth]{g2.png}
+	\end{figure}
+	
+	
+	
+	\noindent\textbf{Проверка на синтезируемость}
+	
+	\noindent\textbf{Отчёт в среде Quartus II}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\textwidth]{p.png}
+	\end{figure}
+	
+	\noindent\textbf{RTL схема}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\textwidth]{rtl.png}
+	\end{figure}
+	
+	\noindent\textbf{Технологическая схема}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\textwidth]{tlvl.png}
+	\end{figure}
+	
+	
+	
+\end{document}

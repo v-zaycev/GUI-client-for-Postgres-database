@@ -1,0 +1,84 @@
+\ProvidesFile{spbu.rtx}
+
+\newcommand\specialist@the{\default@the}
+\specialist@the
+
+\def\diplomafield#1{%
+  %\csname #1label\endcsname\\%
+  \csname @#1status\endcsname\\%
+  \csname @#1\endcsname
+}
+\renewcommand{\cdsep}{\\}
+
+%\renewcommand\bibliography[1][]{\thispagestyle{plain}}
+
+
+
+\if@titlepage\renewcommand\maketitle[1][]{
+\ifthenelse{\equal{#1}{en}}{\@titlepage@entrue}{\@titlepage@enfalse}
+\if@titlepage@en
+  \def\saname{Scientific Supervisor}
+  \def\salabel{\saname}
+\else
+  \def\madeby{\cyr\CYRV\cyrery\cyrp\cyro\cyrl\cyrn\cyri\cyrl}
+\fi
+
+\ifundeflength\firstskip{1.5cm}
+\ifundeflength\secondskip{2.5cm}
+\ifundeflength\thirdskip{1.5ex}
+\ifundeflength\fourthskip{1.5ex}
+\ifundeflength\sixthskip{3cm}
+\ifundeflength\seventhskip{1ex}
+\ifundeflength\eightthskip{1cm}
+
+\def\authorfont{\normalfont}
+\def\titlefont{\normalfont}
+\def\topicfont{\large\scshape}
+
+\thispagestyle{empty}
+\enlargethispage{2cm}
+\vspace*{-2cm}
+\begin{center}
+  {\instfont\hfill\\\@institution}
+\end{center}
+
+\vskip\firstskip
+\begin{center}
+  \vskip\secondskip
+  \vskip\thirdskip
+  {\titlefont\@title}
+  \vskip\fourthskip
+  {\topicfont\@topic}
+\end{center}
+\normalfont
+\vskip\sixthskip
+\hfill
+\begin{minipage}{.33\linewidth}
+    \begin{flushright}
+        \vskip\seventhskip
+        {\begin{spacing}{1}\begin{center}\hfill\\ \@author\end{center}\end{spacing}}
+        \vskip\eightthskip
+        {\begin{spacing}{1}\begin{center}\hfill\\ \@sa\end{center}\end{spacing}}
+    \end{flushright}
+\end{minipage}
+
+\begin{minipage}[t][-4cm][c]{.33\linewidth}
+	\begin{flushleft}
+		\vskip\seventhskip
+		{\begin{spacing}{1}Выполнил\\\@group\end{spacing}}
+		\vskip\eightthskip
+		{\begin{spacing}{1}Руководитель\\\@sastatus\end{spacing}}
+	\end{flushleft}
+\end{minipage}
+
+
+\vfill
+\begin{center}
+  {\@city\cdsep\@date}
+\end{center}
+\normalfont\clearpage
+}\fi
+\endinput
+
+%%
+%% End of file `specialist.rtx'.

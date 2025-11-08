@@ -1,10 +1,7 @@
-from PyQt6.QtWidgets import (QTabWidget, QHeaderView, QWidget, QVBoxLayout, 
-                             QTableWidget, QTableWidgetItem, QPushButton, 
-                             QLabel, QMessageBox, QHBoxLayout, QSizePolicy,
-                             QToolButton, QMenu, QTableView)
+from PyQt6.QtWidgets import (QTabWidget, QWidget, QVBoxLayout, QPushButton, 
+                             QLabel, QHBoxLayout, QSizePolicy, QToolButton, QMenu)
 from PyQt6.QtGui import QAction
-from PyQt6.QtCore import pyqtSignal, Qt, QAbstractTableModel
-from PyQt6.QtPrintSupport import QPrinter
+from PyQt6.QtCore import pyqtSignal
 from base_client import PgsqlClient
 from main_window.basic_widget import BasicWidget
 from main_window.patient_edit_dialog import AddPatientDialog
@@ -156,10 +153,10 @@ class DirectoriesWidget(BasicWidget):
         self.pgsql_client = db_client
         layout = QVBoxLayout()
         self.setLayout(layout)
-        # Заголовок
-        title_label = QLabel("Данные из таблицы people")
-        title_label.setStyleSheet("font-size: 16px; font-weight: bold; margin: 10px;")
-        layout.addWidget(title_label)
+
+        self.title_label = QLabel("Справочники")
+        self.title_label.setStyleSheet("font-size: 16px; font-weight: bold; margin: 10px;")
+        layout.addWidget(self.title_label)
         
 
         # Панель кнопок
@@ -171,7 +168,7 @@ class DirectoriesWidget(BasicWidget):
         self.delete_button.clicked.connect(self.delete_rows)
 
         self.tool_btn = QToolButton()
-        self.tool_btn.setText("Справочники")  # Текст кнопки
+        self.tool_btn.setText("Выбор справочника")  # Текст кнопки
         self.tool_btn.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
 
         # Создаем выпадающее меню
@@ -207,6 +204,10 @@ class DirectoriesWidget(BasicWidget):
         self.set_buttons_states()
         data, description = self.pgsql_client.select(["*"], table)
         self.show_data(data, description)
+        if self.current_table_name == 'wards_view':
+            self.title_label.setText("Палаты")
+        elif self.current_table_name == 'diagnosis':
+            self.title_label.setText("Диагнозы")
     
     def show_add_dialog(self, old : list[list[str]] = None):
         if old is None or len(old) == 0:
@@ -242,9 +243,9 @@ class ReportsWidget(BasicWidget):
         layout = QVBoxLayout()
         self.setLayout(layout)
         # Заголовок
-        title_label = QLabel("Данные из таблицы people")
-        title_label.setStyleSheet("font-size: 16px; font-weight: bold; margin: 10px;")
-        layout.addWidget(title_label)
+        self.title_label = QLabel("Отчёты")
+        self.title_label.setStyleSheet("font-size: 16px; font-weight: bold; margin: 10px;")
+        layout.addWidget(self.title_label)
         
         # Панель кнопок
         self.buttons_layout = self.init_buttons()
@@ -261,7 +262,7 @@ class ReportsWidget(BasicWidget):
         # Создаем выпадающее меню
         self.dropdown_menu = QMenu()
         action1 = QAction("Статистика по палатам", self)
-        action2 = QAction("Статистика по болезням", self)
+        action2 = QAction("Статистика по диагнозам", self)
         self.dropdown_menu.addAction(action1)
         self.dropdown_menu.addAction(action2)
 
@@ -289,15 +290,14 @@ class ReportsWidget(BasicWidget):
         self.current_table_name = table
         self.data, self.description = self.pgsql_client.select(["*"], table)
         self.show_data(self.data, self.description)
-        self.create_xlsx_report()
+        if self.current_table_name == 'ward_occupancy_report':
+            self.title_label.setText("Статистика по палатам")
+        elif self.current_table_name == 'diagnosis_statistics':
+            self.title_label.setText("Статистика по диагнозам")
     
-    def create_xlsx_report(self):
-        df = pd.DataFrame(data = self.data, columns=[names_conversion[self.current_table_name][desc[0]] for desc in self.description])
-        self.save_df_with_auto_width(df,"report.xlsx")
-
     def create_csv_report(self):
         df = pd.DataFrame(data = self.data, columns=[names_conversion[self.current_table_name][desc[0]] for desc in self.description])
-        df.to_csv("report.csv", index = False)
+        df.to_csv(self.current_table_name + ".csv", index = False)
 
     def init_buttons(self) -> QHBoxLayout:
         buttons_layout = QHBoxLayout()
@@ -328,39 +328,34 @@ class ReportsWidget(BasicWidget):
                 
         return buttons_layout
     
-    def save_df_with_auto_width(self, df : pd.DataFrame, filename):
-        df.to_excel(filename, index=False, engine='openpyxl')
+    def create_xlsx_report(self):
+        df = pd.DataFrame(data = self.data, columns=[names_conversion[self.current_table_name][desc[0]] for desc in self.description])
+        df.to_excel(self.current_table_name + '.xlsx', index=False, engine='openpyxl')
         
-        workbook = load_workbook(filename)
+        workbook = load_workbook(self.current_table_name + '.xlsx')
         worksheet = workbook.active
         
-        # Автоматическая ширина для каждого столбца
         for column in worksheet.columns:
             max_length = 0
             column_letter = get_column_letter(column[0].column)
             
             for cell in column:
                 try:
-                    # Учитываем длину текста в ячейке
                     if len(str(cell.value)) > max_length:
                         max_length = len(str(cell.value))
                 except:
                     pass
             
-            adjusted_width = min(max_length + 2, 50)  # максимум 50 символов
+            adjusted_width = min(max_length + 2, 50)
             worksheet.column_dimensions[column_letter].width = adjusted_width
         
-        workbook.save(filename)
+        workbook.save(self.current_table_name + '.xlsx')
 
     def export_to_pdf(self):
 
         try:
-            # Попробуем найти стандартные шрифты Windows
-            font_paths = [
-                "C:/Windows/Fonts/arial.ttf",
-                "C:/Windows/Fonts/times.ttf", 
-                "/usr/share/fonts/truetype/freefont/FreeSans.ttf"  # для Linux
-            ]
+            font_paths = ["C:/Windows/Fonts/arial.ttf",
+                          "C:/Windows/Fonts/times.ttf"]
             
             font_registered = False
             for font_path in font_paths:
@@ -370,7 +365,6 @@ class ReportsWidget(BasicWidget):
                     break
                     
             if not font_registered:
-                # Используем стандартный шрифт ReportLab (ограниченная поддержка кириллицы)
                 pdfmetrics.registerFont(TTFont('CyrillicFont', 'Helvetica'))
         except:
             pdfmetrics.registerFont(TTFont('CyrillicFont', 'Helvetica'))
@@ -387,10 +381,9 @@ class ReportsWidget(BasicWidget):
         title_style = styles['Title']
         title_style.fontName = 'CyrillicFont'
     
-        # Добавляем титульную надпись
         title_paragraph = Paragraph("Отчёт", title_style)
         elements.append(title_paragraph)
-        elements.append(Spacer(1, 20))  # отступ после заголовка
+        elements.append(Spacer(1, 20)) 
 
         table = Table(data)
         table.setStyle(TableStyle([

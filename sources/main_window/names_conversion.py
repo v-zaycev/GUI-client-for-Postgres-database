@@ -15,6 +15,11 @@ names_conversion = {
         "diagnosis" : "Диагноз",
     },
 
+    "diagnosis" : {
+        "id" : "id",
+        "name" : "Диагноз",
+    },
+
     "ward_occupancy_report" : {
         "ward_name" : "Палата",
         "diagnosis_name" : "Диагноз",
