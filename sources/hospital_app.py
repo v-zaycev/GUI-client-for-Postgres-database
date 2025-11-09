@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (QMainWindow, QStackedWidget)
 from sources.login_window import LoginWidget
 from sources.main_window.main_window import MainAppWidget
 from sources.base_client import PgsqlClient
-from sources.main_window.exit_dialog import LogoutDialog
+from sources.main_window.dialogs.exit_dialog import LogoutDialog
 
 class HospitalApp(QMainWindow):
     def __init__(self):
