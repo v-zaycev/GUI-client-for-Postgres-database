@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QPushButton,
                              QLabel, QLineEdit, QFrame)
 from PyQt6.QtCore import pyqtSignal, Qt
 
-from base_client import PgsqlClient
+from sources.base_client import PgsqlClient
 
 class LoginWidget(QWidget):
     # Сигнал успешного входа

@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import ( QHeaderView, QWidget,
                              QTableWidget, QTableWidgetItem, QPushButton, 
                              QMessageBox, QHBoxLayout)
 from PyQt6.QtCore import Qt
-from main_window.names_conversion import names_conversion
+from sources.main_window.names_conversion import names_conversion
 
 class BasicWidget(QWidget):
     pgsql_client = None

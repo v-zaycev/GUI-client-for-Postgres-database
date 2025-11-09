@@ -1,9 +1,8 @@
-import sys
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QStackedWidget)
-from login_window import LoginWidget
-from main_window.main_window import MainAppWidget
-from base_client import PgsqlClient
-from main_window.exit_dialog import LogoutDialog
+from PyQt6.QtWidgets import (QMainWindow, QStackedWidget)
+from sources.login_window import LoginWidget
+from sources.main_window.main_window import MainAppWidget
+from sources.base_client import PgsqlClient
+from sources.main_window.exit_dialog import LogoutDialog
 
 class HospitalApp(QMainWindow):
     def __init__(self):
@@ -29,7 +28,6 @@ class HospitalApp(QMainWindow):
         self.setWindowTitle(f"Hospital - {username}")
         self.resize(800, 600)
         
-
     def on_logout(self):
         dialog = LogoutDialog(self)
         dialog.switch_user_clicked.connect(self.logout)
@@ -47,8 +45,3 @@ class HospitalApp(QMainWindow):
         self.pgsql_client.log_out()
         self.close()
     
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = HospitalApp()
-    window.show()
-    sys.exit(app.exec())

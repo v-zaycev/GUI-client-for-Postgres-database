@@ -1,7 +1,7 @@
 import psycopg2
 from PyQt6.QtWidgets import (QVBoxLayout, QMessageBox, QLineEdit,
                              QFormLayout, QDialog, QDialogButtonBox)
-from base_client import PgsqlClient
+from sources.base_client import PgsqlClient
 
 class AddDiagnosisDialog(QDialog):
     def __init__(self, db_client : PgsqlClient, old : dict = None):

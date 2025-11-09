@@ -2,9 +2,7 @@ import psycopg2
 from PyQt6.QtWidgets import (QVBoxLayout, QMessageBox, QLineEdit,
                              QFormLayout, QDialog, QDialogButtonBox,
                              QComboBox, QSpinBox)
-from PyQt6.QtGui import QAction
-from PyQt6.QtCore import pyqtSignal
-from base_client import PgsqlClient
+from sources.base_client import PgsqlClient
 
 class AddWardDialog(QDialog):
     def __init__(self, db_client : PgsqlClient, old : dict = None):
