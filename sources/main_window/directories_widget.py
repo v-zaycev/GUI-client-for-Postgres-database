@@ -2,8 +2,8 @@ from PyQt6.QtWidgets import (QVBoxLayout, QLabel, QToolButton, QMenu)
 from PyQt6.QtGui import QAction
 from base_client import PgsqlClient
 from main_window.basic_widget import BasicWidget
-from main_window.ward_edit_dialog import AddWardDialog
-from main_window.diagnosis_edit_dialog import AddDiagnosisDialog
+from main_window.dialogs.ward_edit_dialog import AddWardDialog
+from main_window.dialogs.diagnosis_edit_dialog import AddDiagnosisDialog
 
 
 

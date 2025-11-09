@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (QVBoxLayout, QLabel)
 from base_client import PgsqlClient
 from main_window.basic_widget import BasicWidget
-from main_window.patient_edit_dialog import AddPatientDialog
+from main_window.dialogs.patient_edit_dialog import AddPatientDialog
 
 class MainTableWidget(BasicWidget):
     def __init__(self, db_client : PgsqlClient):
