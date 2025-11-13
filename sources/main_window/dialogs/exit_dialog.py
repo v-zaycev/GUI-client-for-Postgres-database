@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QDialog, QVBoxLayout, QPushButton
 from PyQt6.QtCore import Qt, pyqtSignal
 
 class LogoutDialog(QDialog):
-    logout_clicked = pyqtSignal()
+    exit_clicked = pyqtSignal()
     switch_user_clicked = pyqtSignal()
     
     def __init__(self, parent=None):
@@ -42,7 +42,7 @@ class LogoutDialog(QDialog):
         self.setLayout(layout)
     
     def on_logout(self):
-        self.logout_clicked.emit()
+        self.exit_clicked.emit()
         self.accept()
     
     def on_switch_user(self):

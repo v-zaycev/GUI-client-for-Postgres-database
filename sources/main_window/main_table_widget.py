@@ -1,7 +1,7 @@
-from PyQt6.QtWidgets import (QVBoxLayout, QLabel)
-from base_client import PgsqlClient
-from main_window.basic_widget import BasicWidget
-from main_window.dialogs.patient_edit_dialog import AddPatientDialog
+from PyQt6.QtWidgets import (QVBoxLayout, QLabel, QMessageBox)
+from sources.base_client import PgsqlClient
+from sources.main_window.basic_widget import BasicWidget
+from sources.main_window.dialogs.patient_edit_dialog import AddPatientDialog
 
 class MainTableWidget(BasicWidget):
     def __init__(self, db_client : PgsqlClient):
@@ -42,21 +42,24 @@ class MainTableWidget(BasicWidget):
         self.show_data(data, description)
 
     def show_add_dialog(self, old : list[list[str]] = None):
-        if old is None or len(old) == 0:
-            data = None
-        else:
-            data = {
-                "id" : old[0][0],
-                "first_name" : old[0][1],
-                "last_name" : old[0][2],
-                "father_name" : old[0][3],
-                "diagnosis" : old[0][4],
-                "ward" : old[0][5]
-            }
-        dialog = AddPatientDialog(self.pgsql_client, data)
-        if dialog.exec():
-            data = dialog.get_new_data()
-            dialog.add_patient(data)
-        data, description = self.pgsql_client.select(['*'], 'people_view')
-        self.table.clearSelection()
-        self.show_data(data, description)
+        try:
+            if old is None or len(old) == 0:
+                data = None
+            else:
+                data = {
+                    "id" : old[0][0],
+                    "first_name" : old[0][1],
+                    "last_name" : old[0][2],
+                    "father_name" : old[0][3],
+                    "diagnosis" : old[0][4],
+                    "ward" : old[0][5]
+                }
+            dialog = AddPatientDialog(self.pgsql_client, data)
+            if dialog.exec():
+                data = dialog.get_new_data()
+                dialog.add_patient(data)
+            data, description = self.pgsql_client.select(['*'], 'people_view')
+            self.table.clearSelection()
+            self.show_data(data, description)
+        except Exception:
+            QMessageBox.critical(None, "Ошибка", "Ошибка соединения")

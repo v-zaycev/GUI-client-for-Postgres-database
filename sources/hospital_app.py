@@ -16,6 +16,7 @@ class HospitalApp(QMainWindow):
         self.login_widget = LoginWidget(self.pgsql_client)
         self.stacked_widget.addWidget(self.login_widget)
         self.login_widget.login_signal.connect(self.on_login)
+        self.login_widget.exit_signal.connect(self.exit)
         self.main_app_widget = None
         
     def on_login(self, username):        
@@ -31,7 +32,7 @@ class HospitalApp(QMainWindow):
     def on_logout(self):
         dialog = LogoutDialog(self)
         dialog.switch_user_clicked.connect(self.logout)
-        dialog.logout_clicked.connect(self.exit)
+        dialog.exit_clicked.connect(self.exit)
         dialog.exec()
 
     def logout(self):

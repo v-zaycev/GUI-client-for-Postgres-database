@@ -31,12 +31,12 @@ class AddPatientDialog(QDialog):
         self.father_name_input.setMaxLength(20)
 
         self.ward_combo = QComboBox()
-        data, description = self.pgsql_client.select(['id', 'name'], 'wards_view')
+        data, _ = self.pgsql_client.select(['id', 'name'], 'wards_view')
         for i in data:
             self.ward_combo.addItem(i[1])
 
         self.diagnosis_combo = QComboBox()
-        data, description = self.pgsql_client.select(['id', 'name'], 'diagnosis')
+        data, _ = self.pgsql_client.select(['id', 'name'], 'diagnosis')
         for i in data:
             self.diagnosis_combo.addItem(i[1])
 

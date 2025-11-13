@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import ( QVBoxLayout, QPushButton, QLabel, QHBoxLayout, QToolButton, QMenu)
 from PyQt6.QtGui import QAction
-from base_client import PgsqlClient
-from main_window.basic_widget import BasicWidget
+from sources.base_client import PgsqlClient
+from sources.main_window.basic_widget import BasicWidget
 
 import pandas as pd
 from reportlab.lib.pagesizes import A4, landscape
@@ -12,7 +12,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.styles import getSampleStyleSheet
 import os
 
-from main_window.names_conversion import names_conversion
+from sources.main_window.names_conversion import names_conversion
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 

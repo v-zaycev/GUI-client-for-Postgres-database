@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (QTabWidget, QWidget, QVBoxLayout, QPushButton, 
                              QHBoxLayout, QSizePolicy)
 from PyQt6.QtCore import pyqtSignal
-from base_client import PgsqlClient
+from sources.base_client import PgsqlClient
 
 from sources.main_window.main_table_widget import MainTableWidget
 from sources.main_window.directories_widget import DirectoriesWidget

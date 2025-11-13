@@ -15,7 +15,6 @@ class AddDiagnosisDialog(QDialog):
             self.setWindowTitle("Изменение диагноза")
             self.id = old["id"]
         self.resize(300, 100)
-        #self.setGeometry(200, 200, 300, 100)
         
         layout = QVBoxLayout()
         
