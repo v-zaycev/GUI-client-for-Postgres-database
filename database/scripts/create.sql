@@ -77,15 +77,23 @@ GROUP BY w.id, w.name, d.name, w.max_count
 ORDER BY occupancy_percent DESC;
 
 CREATE OR REPLACE VIEW diagnosis_statistics AS
+WITH tmp AS (
+SELECT d.id, SUM(COALESCE(w.max_count ,0)) as max_count
+FROM diagnosis d
+LEFT JOIN wards w ON w.diagnosis_id = d.id
+GROUP BY d.id
+)
+
 SELECT 
     d.name as diagnosis_name,
     COUNT(DISTINCT p.id) as patient_count,
     COUNT(DISTINCT w.id) as wards_count,
-	SUM(w.max_count) as total_capacity,  -- ← ДОБАВЛЕНО: всего мест под диагноз
-    SUM(w.max_count) - COUNT(p.id) as free_beds,  -- ← ДОБАВЛЕНО: свободные места
-    ROUND(COUNT(p.id) * 100.0 / NULLIF(SUM(w.max_count), 0), 2) as occupancy_percent,  -- ← ДОБАВЛЕНО: % заполненности
-    ROUND(COUNT(DISTINCT p.id) * 100.0 / (SELECT COUNT(*) FROM people), 2) as percentage_of_total
+	t.max_count as total_capacity, 
+    t.max_count - COUNT(DISTINCT p.id) as free_beds,
+    ROUND(COUNT(DISTINCT p.id) * 100.0 / NULLIF(t.max_count, 0), 2) as occupancy_percent, 
+    ROUND(COUNT(DISTINCT p.id) * 100.0 / NULLIF((SELECT COUNT(*) FROM people),0), 2) as percentage_of_total
 FROM diagnosis d
+LEFT JOIN tmp t ON d.id = t.id
 LEFT JOIN people p ON d.id = p.diagnosis_id
 LEFT JOIN wards w ON p.ward_id = w.id
 GROUP BY d.id, d.name

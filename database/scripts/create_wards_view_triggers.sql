@@ -1,6 +1,97 @@
+CREATE OR REPLACE PROCEDURE redistribute_patients(
+    p_old_ward_id INTEGER,
+    p_old_ward_name TEXT,
+    p_old_ward_max_count INTEGER
+) AS $$
+DECLARE
+    patient_record RECORD;
+    ward_record RECORD;
+    current_ward_id INT;
+    current_ward_count INT := 0;
+    current_ward_max INT;
+    
+    ward_diag INT;
+    in_ward INT;
+    with_diagnosis INT;
+    diagnosis_max_all_wards INT;
+BEGIN
+    SELECT diagnosis_id INTO ward_diag
+    FROM people
+    WHERE ward_id = p_old_ward_id
+    LIMIT 1;
+
+    SELECT COUNT(*) INTO in_ward
+    FROM people
+    WHERE ward_id = p_old_ward_id;
+
+    SELECT COUNT(*) INTO with_diagnosis
+    FROM people
+    WHERE diagnosis_id = ward_diag;
+
+    SELECT SUM(max_count) INTO diagnosis_max_all_wards
+    FROM wards
+    WHERE diagnosis_id = ward_diag;
+
+    IF (in_ward > 0 AND with_diagnosis > diagnosis_max_all_wards - p_old_ward_max_count) THEN
+        RAISE EXCEPTION 'Невозможно удалить палату. Недостаточно мест для перераспределения пациентов.';
+    END IF;
+
+    CREATE TEMP TABLE available_wards AS
+    SELECT 
+        p.ward_id as id, 
+        w.max_count as max_count, 
+        COUNT(*) as current_count
+    FROM people p
+    LEFT JOIN wards w ON p.ward_id = w.id
+    WHERE p.ward_id != p_old_ward_id 
+      AND p.diagnosis_id = ward_diag
+    GROUP BY p.ward_id, w.max_count;
+
+    FOR patient_record IN (
+        SELECT *
+        FROM people 
+        WHERE ward_id = p_old_ward_id
+    ) LOOP
+        current_ward_id := NULL;
+        
+        FOR ward_record IN SELECT * FROM available_wards LOOP
+            IF (ward_record.current_count < ward_record.max_count) THEN 
+                current_ward_id := ward_record.id;
+                current_ward_max := ward_record.max_count;
+                current_ward_count = ward_record.current_count
+                EXIT;
+            END IF;
+        END LOOP;
+
+        IF current_ward_id IS NULL THEN
+            RAISE EXCEPTION 'No available wards for patient redistribution';
+        END IF;
+
+        -- Перемещаем пациента
+        UPDATE people 
+        SET ward_id = current_ward_id
+        WHERE id = patient_record.id;
+
+        -- Обновляем счетчик в временной таблице
+        UPDATE available_wards 
+        SET current_count = current_ward_count + 1
+        WHERE id = current_ward_id;
+
+        -- Удаляем заполненную палату из доступных
+        IF (current_ward_count + 1) >= current_ward_max THEN
+            DELETE FROM available_wards WHERE id = current_ward_id;
+        END IF;
+    END LOOP;
+
+    DROP TABLE available_wards;
+    
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION delete_from_wards_view()
 RETURNS TRIGGER AS $$
 BEGIN
+    CALL redistribute_patients(OLD.id, OLD.name, OLD.max_count);
     DELETE FROM wards WHERE id = OLD.id;
     RETURN OLD;
 END;
@@ -122,6 +213,10 @@ BEGIN
         SELECT id INTO diagnosis_id_val FROM diagnosis WHERE name = NEW.diagnosis;
     ELSE
         diagnosis_id_val := NULL;
+    END IF;
+
+    IF OLD.diagnosis != NEW.diagnosis THEN
+        CALL redistribute_patients(OLD.id, OLD.name, OLD.max_count);
     END IF;
 
     -- 6. Обновляем данные в основной таблице
