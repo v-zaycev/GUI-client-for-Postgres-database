@@ -96,5 +96,5 @@ FROM diagnosis d
 LEFT JOIN tmp t ON d.id = t.id
 LEFT JOIN people p ON d.id = p.diagnosis_id
 LEFT JOIN wards w ON p.ward_id = w.id
-GROUP BY d.id, d.name
+GROUP BY d.id, d.name, t.max_count
 ORDER BY patient_count DESC;
