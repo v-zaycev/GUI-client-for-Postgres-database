@@ -34,8 +34,7 @@ left=1.5cm, right=1.5cm, top=2cm, bottom=2cm, headsep=1cm, footskip=1cm]{geometr
 \usepackage{listings}
 \usepackage{setspace}
 \usepackage{xcolor}
-
-
+\usepackage{minted}
 \usepackage{epstopdf}
 \usepackage{array}
 
@@ -127,398 +126,204 @@ left=1.5cm, right=1.5cm, top=2cm, bottom=2cm, headsep=1cm, footskip=1cm]{geometr
 	\tableofcontents
 	
 	\section{Задание}
-	\section{Пользователи базы данных}
-	\section{Работа интерфейса}
-	\section{Вывод}
-	\section{Список литературы}	
-	\begin{center}
-		\textbf{Ведомый контроллер SPI}
-	\end{center}
-	Контроллер для приёма данных от внешних устройств по последовательному интерфейсу SPI. Контроллер принимает по шине SPI байт данных и передаёт его в управляемый модуль. После приёма сигнал valid находится в состоянии «1» в течение одного такта.\\
-	\indent\textbf{Входные сигналы:}\vspace{-10pt}
-	\begin{spacing}{1.2}
-		\begin{lstlisting}[numbers=none]
-			bool sclk,mosi,ss_n;	\end{lstlisting}
-	\end{spacing}
-	\textbf{Выходные сигналы:} \vspace{-10pt}
-	\begin{spacing}{1.2}
-		\begin{lstlisting}[numbers=none]
-			bool miso;
-			sc_uint<8> data;
-			bool valid;	\end{lstlisting}
-	\end{spacing}	
-	\textbf{Логика:}\\
-	\indent последовательная и комбинационная\\
-	\indent\textbf{Пример временной диаграммы:}\\
+	Целью данной курсовой работы является создание приложения, включающего в себя клиентскую часть GUI для Базы Данных «Госпиталь». Приложение должно включать в себя следующие элементы:
+	\vspace{-5pt}
+	\begin{itemize}
+		\setlength{\itemsep}{-2pt}
+		\item[а)] отдельный файл параметров подключения к БД, который задаются файлом (формат plain text file или ini config file или xml file);
+		\item[б)] авторизацию с хешированием паролей для пользователей (2 пользователя);
+		\item[в)] меню приложения содержит группы элементов: СПРАВОЧНИКИ, ЖУРНАЛЫ, ОТЧЕТЫ;
+		\item[г)] приложение должно обеспечивать ввод, редактирование, просмотр информации из БД;
+		\item[д)] используется пользовательский элементы вида GridView для обзора таблиц (представлений) БД;
+		\item[е)] GridView, который содержит внешние ключи, должен содержать нужные/необходимые атрибуты внешней таблицы.
+		\item[ж)] есть отдельная форма для работы с записью таблицы, содержащая эл-ты интерфейса ДОБАВИТЬ, ИЗМЕНИТЬ, УДАЛИТЬ, ЗАКРЫТЬ; открывается из GridView
+		\item[з)] меню пункта ОТЧЕТЫ вызывает формы вывода отчетов (минимум 2-х) (выходной формат txt или xls или pdf).
+	\end{itemize}
 	
-	\begin{figure}[H]
-		\centering
-		\includegraphics{o.png}
-	\end{figure}
 	\newpage
-	\noindent\textbf{Программная реализация на SystemC алгоритма Ведомый контроллер SPI}
+	\section{Пользователи базы данных}
+	Для работы с БД было создано 2 основных роли пользователя, пароли которых захешированы с помощью модифицированного алгоритма Blowfish:
+	\begin{enumerate}
+		\item basic\_role – наделена правами чтения, вставки, удаления и изменения для таблицы Пациенты, а также правами на чтение для таблиц Палаты и Диагнозы.
+		\item advanced\_role – наделена правами чтения, вставки, удаления и изменения для таблиц Пациенты, Палаты и Диагнозы.
+	\end{enumerate}
+
+	Для хранения записей о пользователях была создана таблица users с полями id, username и password\_hash:
+	\begin{table}[h]
+		\centering
+		\renewcommand{\arraystretch}{1.5}
+		\begin{tabular}{|c|c|c|}
+			\hline
+			\textbf{id} & \textbf{username} & \textbf{passord\_hash} \\
+			\hline
+			1 & basic\_user &\$2b\$12\$tmkj48MYoZNnAZbsQ4tc1uyZLY/xwdwNgQq9G5JnlU900XWeSIe6G \\
+			\hline
+			2 & advanced\_user &\$2b\$12\$oIXeR7OnlssIOBuOh9X1kuRGZuuafwE8nTA7jAJwpPp7Eoja4nfG. \\
+			\hline
+		\end{tabular}
+	\end{table}
 	
-	SPISlave.h  \vspace{-10pt}
-	\begin{spacing}{1.2}
-		\begin{lstlisting}[language=C++]
-			#ifndef SPISLAVE_H
-			#define SPISLAVE_H
-			#include <systemc.h>
-			
-			SC_MODULE(SPISlave)
-			{
-				/*** INPUT SIGNALS: ***/
-				sc_in<bool> reset;
-				sc_in<bool> sclk;
-				sc_in<bool> mosi;
-				sc_in<bool> ss;
-				/*** OUTPUT SIGNALS: ***/
-				sc_out<bool> miso;
-				sc_out<bool> valid;
-				sc_out<sc_uint<8>> data;
-				/*** INTERNAL SIGNALS: ***/
-				sc_signal<bool> ss_int;
-				sc_signal<sc_uint<8> > buffer;
-				// methods
-				void set_outputs();
-				void update_buffer();
-				void update_ss();
-				// constructor of module
-				SC_CTOR(SPISlave)
-				{
-					SC_METHOD(update_buffer);
-					sensitive_pos << reset;
-					sensitive_neg << sclk;
-					SC_METHOD(set_outputs);
-					sensitive_pos << sclk << reset;
-					SC_METHOD(update_ss);
-					sensitive_pos << sclk;
-				}
-			};
-			#endif // SPISLAVE_H
-		\end{lstlisting}
-	\end{spacing}
+	\noindent В ней хранятся имя пользователя и хеш пароля, который формируется с индивидуальной солью. Для подключения используются параметры заданные в ini файле config.ini:
+	\vspace{-5pt}
+	\inputminted[
+	bgcolor=gray!5,
+	frame=single,
+	style=vs
+	]{ini}{../config.ini}
+	\indent По умолчанию пользователь app\_user имеет роль waitroom\_role, которая имеет права только на чтение таблицы пользователей, и при успешной авторизации пользователю устанавливается роль basic\_role или advanced\_role.
 	
-	SPISlave.cpp \vspace{-10pt}
-	\begin{spacing}{1.2}
-		\begin{lstlisting}[language=C++]
-			#include "SPISlave.h"
-			
-			void SPISlave::update_buffer()
-			{
-				if(reset)
-				{
-					buffer.write(0);
-				}
-				else
-				{
-					if (!ss.read())
-					{
-						buffer.write((sc_uint<8>(mosi.read()) << 7) | (buffer.read() >> 1));
-					}
-				}
-			}
-			
-			void SPISlave::update_ss()
-			{
-				if (ss.read())
-				{
-					ss_int.write(1);
-				}
-				else
-				{
-					ss_int.write(0);
-				}
-			}
-			
-			void SPISlave::set_outputs()
-			{
-				miso.write(buffer.read() & 1);
-				data.write(buffer.read());
-				if (reset)
-				{
-					valid.write(0);
-				}
-				else
-				{
-					if (!ss_int.read())
-					{
-						if (ss.read())
-						{
-							valid.write(1);
-						}
-						else
-						{
-							valid.write(0);
-						}
-					}
-					else
-					{
-						valid.write(0);
-					}
-				}
-			}
-		\end{lstlisting}
-	\end{spacing}
-	
-	
-	Test.h \vspace{-10pt}
-	\begin{spacing}{1.2}
-		\begin{lstlisting}[language=C++]
-			#ifndef TEST_H
-			#define TEST_H
-			#include <iostream>
-			#include <systemc.h>
-			
-			SC_MODULE(Test)
-			{
-				/*** interface signals ***/
-				sc_in<bool> sclk;
-				sc_in<bool> valid;
-				sc_in<sc_uint<8> > data;
-				sc_out<bool> reset;
-				sc_out<bool> mosi;
-				sc_out<bool> ss;
-				// internal values
-				unsigned int counter;
-				unsigned char vals[10] = { 10, 29, 57, 255, 128, 185, 0, 1, 2, 3 };
-				// SC_THREAD: generates reset, ss and mosi signals
-				void generate_command();
-				// SC_METHOD: checks that data is same as expected
-				void check_data();
-				// constructor of test bench
-				SC_CTOR(Test):
-				counter(0)
-				{
-					SC_THREAD(generate_command);
-					sensitive_pos << sclk;
-					SC_METHOD(check_data);
-					dont_initialize();
-					sensitive_pos << valid;
-				}
-			};
-			#endif // TEST_H
-		\end{lstlisting}
-	\end{spacing}
-	
-	Test.cpp \vspace{-10pt}
-	\begin{spacing}{1.2}
-		\begin{lstlisting}[language=C++]
-			#include "Test.h"
-			
-			void Test::generate_command()
-			{
-				reset.write(1);
-				ss.write(1);
-				wait(50, SC_NS);
-				reset.write(0);
-				wait(100, SC_NS);
-				while (counter < 10)
-				{
-					int tmp = vals[counter];
-					ss.write(0);
-					wait();
-					for (int i = 0; i < 8; ++i)
-					{
-						mosi.write(tmp & 1);
-						tmp >>= 1;
-						wait();
-					}
-					ss.write(1);
-					wait(200, SC_NS);
-				}
-			}
-			void Test::check_data()
-			{
-				if (vals[counter] != data.read())
-				{
-					std::cerr << "Error at" << sc_time_stamp() << ": SPI returned " << data.read();
-					std::cerr << " when expected " << vals[counter] << std::endl;
-				}
-				++counter;
-			}
-		\end{lstlisting}
-	\end{spacing}
-	
-	main.cpp \vspace{-10pt}
-	\begin{spacing}{1.2}
-		\begin{lstlisting}[language=C++]
-			#include <systemc.h>
-			#include "Test.h"
-			#include "SPISlave.h"
-			
-			int sc_main(int argc, char* argv[])
-			{
-				// create modules
-				SPISlave module("SPI");
-				Test test("SPI_test");
-				//create 200MHz clock
-				sc_clock s_sclk("sclk", 5, SC_NS);
-				// create signals
-				sc_signal<bool> s_reset("reset");
-				sc_signal<bool> s_miso("miso");
-				sc_signal<bool> s_mosi("mosi");
-				sc_signal<sc_uint<8> > s_data("data");
-				sc_signal<bool> s_valid("valid");
-				sc_signal<bool> s_ss("ss");
-				// connect signals
-				test.sclk(s_sclk);
-				test.reset(s_reset);
-				test.mosi(s_mosi);
-				test.ss(s_ss);
-				test.data(s_data);
-				test.valid(s_valid);
-				module.sclk(s_sclk);
-				module.reset(s_reset);
-				module.mosi(s_mosi);
-				module.miso(s_miso);
-				module.valid(s_valid);
-				module.data(s_data);
-				module.ss(s_ss);
-				// create output trace file
-				sc_trace_file* tf = sc_create_vcd_trace_file("SPI");
-				tf->set_time_unit(1, SC_NS);
-				sc_trace(tf, s_sclk,  "sclk");
-				sc_trace(tf, s_reset, "reset");
-				sc_trace(tf, s_ss,    "ss");
-				sc_trace(tf, s_mosi,  "mosi");
-				sc_trace(tf, s_miso,  "miso");
-				sc_trace(tf, s_valid, "valid");
-				sc_trace(tf, s_data,  "data");
-				sc_start(10000, SC_NS);
-				sc_close_vcd_trace_file(tf);
-				return 0;
-			}	
-		\end{lstlisting}
-	\end{spacing}
-	\noindent\textbf{Тестирование симуляцией}
-	
+	\section{Работа интерфейса}
+	\subsection{Вход}
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=\textwidth]{i1.png}
+		\includegraphics[width=\textwidth]{images/log_window_0.png}
+		\caption[]{Окно входа}
 	\end{figure}
-	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=\textwidth]{i2.png}
+		\includegraphics[width=\textwidth]{images/log_window_1.png}
+		\caption[]{Неверный логин или пароль}
 	\end{figure}
-	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=\textwidth]{i3.png}
+		\includegraphics[width=\textwidth]{images/log_window_2.png}
+		\caption[]{Отсутствие подключения к базе}
 	\end{figure}
-	
+	\subsection{Основной интерфейс}
+	\subsubsection{Журналы}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=\textwidth]{images/main_widget_0.png}
+			\caption[]{Таблица пациентов}
+		\end{figure}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=\textwidth]{images/main_widget_1.png}
+			\caption[]{Изменение состояний кнопок при выборе записей}
+		\end{figure}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=\textwidth]{images/main_widget_2.png}
+			\caption[]{Изменение состояний кнопок при выборе записей}
+		\end{figure}
+				\begin{figure}[H]
+			\centering
+			\includegraphics[width=\textwidth]{images/main_widget_3.png}
+			\caption[]{Результат удаления}
+		\end{figure}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=\textwidth]{images/main_widget_4.png}
+			\caption[]{Неверный логин или пароль}
+		\end{figure}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=\textwidth]{images/main_widget_5.png}
+			\caption[]{Окно добавления пациента}
+		\end{figure}
+				\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.75\textwidth]{images/main_widget_6.png}
+			\caption[]{Результат добавления пациента}
+		\end{figure}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.75\textwidth]{images/main_widget_7.png}
+			\caption[]{Окно изменения пациента}
+		\end{figure}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.75\textwidth]{images/main_widget_8.png}
+			\caption[]{Ошибки при выборе некорректных данных}
+		\end{figure}
+		
+	\subsubsection{Справочники}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.75\textwidth]{images/directories_widget_0.png}
+			\caption[]{Таблица палат для пользователя basic\_user}
+		\end{figure}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.75\textwidth]{images/directories_widget_01.png}
+			\caption[]{Таблица палат для пользователя advanced\_user}
+		\end{figure}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.75\textwidth]{images/directories_widget_1.png}
+			\caption[]{Выбор справочника}
+		\end{figure}
+		Для палат выбор вместимости осуществляется с помощью spinbox, значения в котором ограничены диапазоном от 1 до 20.
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.75\textwidth]{images/directories_widget_2.png}
+			\caption[]{Окно добавления/изменения палат}
+		\end{figure}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.75\textwidth]{images/main_widget_3.png}
+			\caption[]{Результат удаления}
+		\end{figure}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.75\textwidth]{images/main_widget_4.png}
+			\caption[]{Неверный логин или пароль}
+		\end{figure}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.75\textwidth]{images/main_widget_5.png}
+			\caption[]{Окно добавления пациента}
+		\end{figure}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.75\textwidth]{images/main_widget_6.png}
+			\caption[]{Результат добавления пациента}
+		\end{figure}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.75\textwidth]{images/main_widget_7.png}
+			\caption[]{Окно изменения пациента}
+		\end{figure}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.75\textwidth]{images/main_widget_8.png}
+			\caption[]{Ошибки при выборе некорректных данных}
+		\end{figure}
+	\subsubsection{Отчёты}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.75\textwidth]{images/reports_widget_0.png}
+			\caption[]{Страницы отчётов}
+		\end{figure}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.75\textwidth]{images/reports_widget_1.png}
+			\caption[]{Выбор отчёта}
+		\end{figure}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.75\textwidth]{images/csv_report.png}
+			\caption[]{csv отчёт}
+		\end{figure}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.75\textwidth]{images/xlsx_report.png}
+			\caption[]{xlsx отчёт}
+		\end{figure}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.75\textwidth]{images/pdf_report.png}
+			\caption[]{pdf отчёт}
+		\end{figure}
+	\subsection{Выход}
+	По нажатию на кнопку выхода открывается диалог с вариантами смены пользователя, который отправляет на начальный экран входа, или выход, который завершает выполнение программы.
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=\textwidth]{i4.png}
+		\includegraphics[width=0.75\textwidth]{images/exit_dialog.png}
+		\caption[]{Диалог выхода и смены пользователя}
 	\end{figure}
 	
-	\noindent\textbf{Аппаратная реализация на Verilog HDL алгоритма Ведомый контроллер SPI}
-	
-	\begin{spacing}{1.2}
-		\begin{lstlisting}[language=Verilog]
-			module SPISlave(data,valid,miso,ss,mosi,sclk,reset);
-			output [7:0] data;
-			output valid;
-			output miso;
-			input ss;
-			input mosi;
-			input sclk;
-			input reset;
-			
-			reg [7:0] data;
-			reg valid;
-			reg miso;
-			
-			reg [7:0] buffer;
-			reg ss_int;
-			
-			//update_ss:
-			always @(posedge sclk )
-			begin
-			if (ss ) begin
-			ss_int  <=(1);
-			end
-			else begin
-			ss_int  <=(0);
-			end
-			end
-			
-			//set_outputs:
-			always @(posedge reset or posedge sclk ) begin
-			miso  <=(buffer &1);
-			data  <=(buffer );
-			if (reset )	begin
-			valid  <=(0);
-			end
-			else begin
-			if (!ss_int ) begin
-			if (ss ) begin
-			valid  <=(1);
-			end
-			else begin
-			valid  <=(0);
-			end	
-			end
-			else begin
-			valid  <=(0);
-			end
-			end
-			end
-			
-			//update_buffer:
-			always @(negedge sclk or posedge reset ) begin
-			if (reset )	begin
-			buffer  <=(0);
-			end
-			else begin
-			if (!ss ) begin
-			buffer  <=(((mosi )<<7)|(buffer >>1));
-			end
-			end
-			end
-			endmodule
-			
-		\end{lstlisting}
-	\end{spacing}
-	
-	\noindent\textbf{Тестирование симуляцией}
-	
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\textwidth]{g1.png}
-	\end{figure}
-	
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\textwidth]{g2.png}
-	\end{figure}
-	
-	
-	
-	\noindent\textbf{Проверка на синтезируемость}
-	
-	\noindent\textbf{Отчёт в среде Quartus II}
-	
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\textwidth]{p.png}
-	\end{figure}
-	
-	\noindent\textbf{RTL схема}
-	
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\textwidth]{rtl.png}
-	\end{figure}
-	
-	\noindent\textbf{Технологическая схема}
-	
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\textwidth]{tlvl.png}
-	\end{figure}
-	
-	
+	\section{Вывод}
+	\section{Список литературы}		
 	
 \end{document}
