@@ -78,7 +78,7 @@ ORDER BY occupancy_percent DESC;
 
 CREATE OR REPLACE VIEW diagnosis_statistics AS
 WITH tmp AS (
-SELECT d.id, SUM(COALESCE(w.max_count ,0)) as max_count
+SELECT d.id, SUM(COALESCE(w.max_count ,0)) as max_count, COUNT(w.id) as wards_count
 FROM diagnosis d
 LEFT JOIN wards w ON w.diagnosis_id = d.id
 GROUP BY d.id
@@ -87,7 +87,7 @@ GROUP BY d.id
 SELECT 
     d.name as diagnosis_name,
     COUNT(DISTINCT p.id) as patient_count,
-    COUNT(DISTINCT w.id) as wards_count,
+    t.wards_count as wards_count,
 	t.max_count as total_capacity, 
     t.max_count - COUNT(DISTINCT p.id) as free_beds,
     ROUND(COUNT(DISTINCT p.id) * 100.0 / NULLIF(t.max_count, 0), 2) as occupancy_percent, 
@@ -96,5 +96,5 @@ FROM diagnosis d
 LEFT JOIN tmp t ON d.id = t.id
 LEFT JOIN people p ON d.id = p.diagnosis_id
 LEFT JOIN wards w ON p.ward_id = w.id
-GROUP BY d.id, d.name, t.max_count
+GROUP BY d.id, d.name, t.wards_count, t.max_count
 ORDER BY patient_count DESC;
