@@ -102,7 +102,7 @@ class LoginWidget(QWidget):
             else:
                 self.error_widget.setText("Неверный логин или пароль")
                 self.error_widget.show()
-        except Exception:
+        except Exception as e:
             self.error_widget.setText("Не удалось подключиться к базе")
             self.error_widget.show()
     def exit(self):

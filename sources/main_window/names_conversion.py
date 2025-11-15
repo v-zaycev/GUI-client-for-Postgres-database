@@ -37,6 +37,11 @@ names_conversion = {
         "free_beds" : "Свободных коек",
         "occupancy_percent" : "Заполненность",
         "percentage_of_total" : "Доля от всех больных"
-    }
-
+    },
+    "users" : {
+        "id" : "id",
+        "username" : "Логин",
+        "password_hash" : "Хэш пароля",
+        "user_role" : "Роль"
+    },
 }

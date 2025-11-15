@@ -20,7 +20,7 @@ class HospitalApp(QMainWindow):
         self.main_app_widget = None
         
     def on_login(self, username):        
-        self.main_app_widget = MainAppWidget(self.pgsql_client)
+        self.main_app_widget = MainAppWidget(self.pgsql_client, username)
         self.main_app_widget.logout_signal.connect(self.on_logout)
         
         self.stacked_widget.addWidget(self.main_app_widget)

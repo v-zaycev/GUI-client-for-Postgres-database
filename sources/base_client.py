@@ -21,6 +21,40 @@ class PgsqlClient:
             password = self.db_pass,
         )
     
+    def insert_user(self, attributes,  username : str, password : str, role : str):
+        try:
+            if self.connection is None:
+                self.connection = self.get_connection()
+            with self.connection.cursor() as cursor:
+                vals = f"'{username}', '{str(bcrypt.hashpw(password.encode('utf-8'),bcrypt.gensalt()), 'utf8')}', '{role}' "
+                query = f"INSERT INTO users ({', '.join(attributes)}) VALUES ({vals})"
+                cursor.execute(query)
+                self.connection.commit()
+        except psycopg2.Error:
+            try:
+                self.connection.rollback()
+            except psycopg2.Error:
+                self.connection = None
+                raise
+            raise
+    
+        def update_user(self, attributes,  username : str, password : str, role : str):
+            try:
+                if self.connection is None:
+                    self.connection = self.get_connection()
+                with self.connection.cursor() as cursor:
+                    vals = f"'{username}', '{str(bcrypt.hashpw(password.encode('utf-8'),bcrypt.gensalt()), 'utf8')}', '{role}' "
+                    query = f"INSERT INTO users ({', '.join(attributes)}) VALUES ({vals})"
+                    cursor.execute(query)
+                    self.connection.commit()
+            except psycopg2.Error:
+                try:
+                    self.connection.rollback()
+                except psycopg2.Error:
+                    self.connection = None
+                    raise
+                raise
+
     def log_in(self, app_username : str, app_password : str) -> bool:
         try:
             if self.connection is None:
@@ -32,12 +66,8 @@ class PgsqlClient:
                     result = bcrypt.checkpw(bytes(app_password, "utf-8"), bytes(users_hash[0][0], "utf-8"))
                     if result:
                         print("success log")
-                        if app_username == 'basic_user':
-                            cursor.execute(f"SET ROLE basic_role")
-                            self.connection.commit()
-                        elif app_username == 'advanced_user':
-                            cursor.execute(f"SET ROLE advanced_role")
-                            self.connection.commit()
+                        cursor.execute(f"CALL set_role('{app_username}')")
+                        self.connection.commit()
                         return True
                     else:
                         print("incorrect password")
@@ -54,8 +84,12 @@ class PgsqlClient:
             raise
             
     def log_out(self):
-        with self.connection.cursor() as cursor:
-            cursor.execute("SET ROLE waitroom_role")
+        if self.connection is not None:
+            try:
+                with self.connection.cursor() as cursor:
+                    cursor.execute("SET ROLE waitroom_role")
+            except psycopg2.Error:
+                self.connection = None
     
     def get_table_rights(self, table_name : str) -> dict:
         try:
@@ -84,12 +118,14 @@ class PgsqlClient:
                 raise
             raise
 
-    def select(self, attributes: list[str], table: str) -> tuple:
+    def select(self, attributes: list[str], table: str, where : str = None) -> tuple:
         try:
             if self.connection is None:
                 self.connection = self.get_connection()
             with self.connection.cursor() as cursor:
                 query = f"SELECT {', '.join(attributes)} FROM {table}"
+                if where is not None:
+                    query += " WHERE " + where
                 cursor.execute(query)
                 result = (cursor.fetchall(), cursor.description)
                 self.connection.commit()

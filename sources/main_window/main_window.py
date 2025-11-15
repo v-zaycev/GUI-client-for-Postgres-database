@@ -6,12 +6,12 @@ from sources.base_client import PgsqlClient
 from sources.main_window.main_table_widget import MainTableWidget
 from sources.main_window.directories_widget import DirectoriesWidget
 from sources.main_window.reports_widget import ReportsWidget
-
+from sources.main_window.users_widget import UsersWidget
 
 class MainAppWidget(QWidget):
     logout_signal = pyqtSignal()
     
-    def __init__(self, db_client : PgsqlClient):
+    def __init__(self, db_client : PgsqlClient, username : str):
         super().__init__()
         self.pgsql_client = db_client
         self.tabs = QTabWidget()
@@ -21,6 +21,9 @@ class MainAppWidget(QWidget):
         self.tabs.addTab(self.mainTable, "Журнал")
         self.tabs.addTab(self.directories, "Справочники")
         self.tabs.addTab(self.reports, "Отчёты")
+        if username == 'super_user':
+            self.users = UsersWidget(db_client)
+            self.tabs.addTab(self.users, "Пользователи")
 
         layout = QVBoxLayout()
         layout.addWidget(self.tabs)  
