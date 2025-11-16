@@ -16,7 +16,7 @@ GRANT SELECT ON permissions_table, ward_occupancy_report, diagnosis_statistics T
 CREATE ROLE super_role;
 REVOKE ALL ON SCHEMA public FROM super_role;
 GRANT SELECT, INSERT, DELETE, UPDATE ON people_view, wards_view, diagnosis, users TO super_role;
-GRANT SELECT ON permissions_table, ward_occupancy_report, diagnosis_statistics TO super_role;
+GRANT SELECT ON permissions_table, ward_occupancy_report, diagnosis_statistics, roles_table TO super_role;
 
 CREATE USER app_user WITH PASSWORD '159753';
 GRANT waitroom_role TO app_user;

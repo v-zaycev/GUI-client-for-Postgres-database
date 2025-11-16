@@ -13,7 +13,7 @@ BEGIN
     END IF;
     
     IF LENGTH(NEW.username) > 50 THEN
-        RAISE EXCEPTION 'Название диагноза не может превышать 20 символов';
+        RAISE EXCEPTION 'Название диагноза не может превышать 50 символов';
     END IF;
 
     RETURN NEW;

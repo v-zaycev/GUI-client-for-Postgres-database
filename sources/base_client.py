@@ -38,22 +38,20 @@ class PgsqlClient:
                 raise
             raise
     
-        def update_user(self, attributes,  username : str, password : str, role : str):
-            try:
-                if self.connection is None:
-                    self.connection = self.get_connection()
-                with self.connection.cursor() as cursor:
-                    vals = f"'{username}', '{str(bcrypt.hashpw(password.encode('utf-8'),bcrypt.gensalt()), 'utf8')}', '{role}' "
-                    query = f"INSERT INTO users ({', '.join(attributes)}) VALUES ({vals})"
-                    cursor.execute(query)
-                    self.connection.commit()
-            except psycopg2.Error:
-                try:
-                    self.connection.rollback()
-                except psycopg2.Error:
-                    self.connection = None
-                    raise
-                raise
+    def edit_user(self, attributes : list,  data : list, id : int | None):
+        if data[1] != "":
+            data[1] = bcrypt.hashpw(data[1].encode('utf-8'), bcrypt.gensalt())
+            data[1] = data[1].decode('utf-8')
+        else:
+            attributes = [attributes[i] for i in [0,2]]
+            data = [data[i] for i in [0,2]]
+        if id is None:
+            self.insert(attributes, "users", data)
+        else:
+            self.update(attributes, "users", data, id)
+            
+                
+
 
     def log_in(self, app_username : str, app_password : str) -> bool:
         try:
@@ -138,7 +136,7 @@ class PgsqlClient:
                 raise
             raise
     
-    def update(self, attributes: list[str], table: str, data: list[str], id : str):
+    def update(self, attributes: list[str], table: str, data: list[str], id : int):
         try:
             if self.connection is None:
                 self.connection = self.get_connection()

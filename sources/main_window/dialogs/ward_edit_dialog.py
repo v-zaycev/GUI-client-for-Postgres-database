@@ -16,7 +16,6 @@ class AddWardDialog(QDialog):
             self.setWindowTitle("Изменение палаты")
             self.id = old["id"]
         self.resize(300, 150)
-        #self.setGeometry(200, 200, 300, 150)
         
         layout = QVBoxLayout()
         
@@ -30,7 +29,7 @@ class AddWardDialog(QDialog):
         self.ward_size_input.setSingleStep(1)
 
         self.diagnosis_combo = QComboBox()
-        data, description = self.pgsql_client.select(['id', 'name'], 'diagnosis')
+        data, _ = self.pgsql_client.select(['id', 'name'], 'diagnosis')
         for i in data:
             self.diagnosis_combo.addItem(i[1])
 

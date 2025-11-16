@@ -1,4 +1,5 @@
 from PyQt6.QtWidgets import (QVBoxLayout, QLabel, QMessageBox)
+import psycopg2
 from sources.base_client import PgsqlClient
 from sources.main_window.basic_widget import BasicWidget
 from sources.main_window.dialogs.user_dialog import AddUserDialog
@@ -55,9 +56,11 @@ class UsersWidget(BasicWidget):
             dialog = AddUserDialog(self.pgsql_client, data)
             if dialog.exec():
                 data = dialog.get_new_data()
-                dialog.add_user(data)
-            data, description = self.pgsql_client.select(['*'], 'users')
+                dialog.edit_user(data)
+            data, description = self.pgsql_client.select(['*'], 'users', "user_role != 'super_role'")
             self.table.clearSelection()
             self.show_data(data, description)
+        except psycopg2.Error as e:
+            QMessageBox.critical(None, "Ошибка базы данных", str(e.diag.message_primary))
         except Exception:
             QMessageBox.critical(None, "Ошибка", "Ошибка соединения")

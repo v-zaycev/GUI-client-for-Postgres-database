@@ -62,6 +62,16 @@ FROM information_schema.tables
 WHERE table_schema = 'public'
     AND table_type IN ('BASE TABLE', 'VIEW');
 
+CREATE OR REPLACE VIEW roles_table AS
+SELECT r.rolname as available_role
+FROM pg_auth_members am
+JOIN pg_roles r ON r.oid = am.roleid
+JOIN pg_roles m ON m.oid = am.member
+JOIN pg_user u ON u.usesysid = am.member
+WHERE u.usename = session_user and 
+      r.rolname != 'super_role' and
+      r.rolname != 'waitroom_role';
+
 
 CREATE OR REPLACE VIEW ward_occupancy_report AS
 SELECT 

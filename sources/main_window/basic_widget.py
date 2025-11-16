@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import ( QHeaderView, QWidget,
                              QMessageBox, QHBoxLayout)
 from PyQt6.QtCore import Qt
 from sources.main_window.names_conversion import names_conversion
+import psycopg2
 
 class BasicWidget(QWidget):
     pgsql_client = None
@@ -108,11 +109,16 @@ class BasicWidget(QWidget):
         return selected_data
 
     def delete_rows(self):
-        ids = self.get_column_values_from_selected(self.table)
-        self.pgsql_client.delete(ids, self.current_table_name)
-        data, description = self.pgsql_client.select(['*'], self.current_table_name)
-        self.table.clearSelection()
-        self.show_data(data, description)
+        try:
+            ids = self.get_column_values_from_selected(self.table)
+            self.pgsql_client.delete(ids, self.current_table_name)
+            data, description = self.pgsql_client.select(['*'], self.current_table_name)
+            self.table.clearSelection()
+            self.show_data(data, description)
+        except psycopg2.Error as e:
+            QMessageBox.critical(None, "Ошибка базы данных", str(e.diag.message_primary))
+        except Exception:
+            QMessageBox.critical(None, "Ошибка", "Ошибка соединения")
     
     def show_data(self, data, description):
         try:
