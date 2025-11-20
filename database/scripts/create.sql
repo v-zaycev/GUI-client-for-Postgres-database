@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS wards (
 	name VARCHAR(20) UNIQUE,
 	max_count INTEGER,
 	diagnosis_id INTEGER,
-	CONSTRAINT fk_wards_diagnosis FOREIGN KEY (diagnosis_id) REFERENCES diagnosis (id) ON DELETE CASCADE);
+	CONSTRAINT fk_wards_diagnosis FOREIGN KEY (diagnosis_id) REFERENCES diagnosis (id) ON DELETE SET NULL);
 
 CREATE TABLE IF NOT EXISTS people (
 	id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

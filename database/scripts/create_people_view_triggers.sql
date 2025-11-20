@@ -55,7 +55,7 @@ BEGIN
     END IF;
 
     -- 4. Проверяем совместимость диагноза палаты и пациента
-    IF ward_diagnosis_id != actual_diagnosis_id THEN
+    IF ward_diagnosis_id IS NULL OR ward_diagnosis_id != new_diagnosis_id THEN
         RAISE EXCEPTION 'Палата "%" предназначена для другого диагноза', NEW.ward;
     END IF;
 
@@ -134,7 +134,7 @@ BEGIN
     END IF;
 
     -- 5. Проверяем совместимость диагноза палаты и пациента
-    IF ward_diagnosis_id != new_diagnosis_id THEN
+    IF ward_diagnosis_id IS NULL OR ward_diagnosis_id != new_diagnosis_id THEN
         RAISE EXCEPTION 'Палата "%" предназначена для другого диагноза', NEW.ward;
     END IF;
 
