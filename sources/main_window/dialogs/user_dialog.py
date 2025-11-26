@@ -58,11 +58,12 @@ class AddUserDialog(QDialog):
         self.setLayout(layout)
     
     def get_new_data(self) -> list:
-        return [
+        data = [
             self.login.text(),
             self.password.text(),
             self.role_combo.currentText()
         ]
+        return data
     
     def edit_user(self, data):
         try:
@@ -78,3 +79,17 @@ class AddUserDialog(QDialog):
             self.password.setEnabled(False)
         else:
             self.password.setEnabled(True)
+
+    def accept(self):
+        try:
+            data = [
+                self.login.text(),
+                self.password.text(),
+                self.role_combo.currentText()
+            ]
+            if len(data[0])<5: raise ValueError("Логин должен содержать не менее 5 символов")
+            if len(data[1])<5: raise ValueError("Пароль должен содержать не менее 5 символов")
+        except ValueError as e:
+            QMessageBox.warning(None, "Некорректные данные", str(e))
+            return
+        return super().accept()

@@ -77,8 +77,11 @@ class ReportsWidget(BasicWidget):
             self.title_label.setText("Статистика по диагнозам")
     
     def create_csv_report(self):
+        reports_dir = "reports"
+        filepath = os.path.join(reports_dir, f"{self.current_table_name}.csv")
+
         df = pd.DataFrame(data = self.data, columns=[names_conversion[self.current_table_name][desc[0]] for desc in self.description])
-        df.to_csv(self.current_table_name + ".csv", index = False)
+        df.to_csv(filepath)
 
     def init_buttons(self) -> QHBoxLayout:
         buttons_layout = QHBoxLayout()
@@ -110,10 +113,13 @@ class ReportsWidget(BasicWidget):
         return buttons_layout
     
     def create_xlsx_report(self):
+        reports_dir = "reports"
+        filepath = os.path.join(reports_dir, f"{self.current_table_name}.xlsx")
+    
         df = pd.DataFrame(data = self.data, columns=[names_conversion[self.current_table_name][desc[0]] for desc in self.description])
-        df.to_excel(self.current_table_name + '.xlsx', index=False, engine='openpyxl')
+        df.to_excel(filepath, index=False, engine='openpyxl')
         
-        workbook = load_workbook(self.current_table_name + '.xlsx')
+        workbook = load_workbook(filepath)
         worksheet = workbook.active
         
         for column in worksheet.columns:
@@ -130,7 +136,7 @@ class ReportsWidget(BasicWidget):
             adjusted_width = min(max_length + 2, 50)
             worksheet.column_dimensions[column_letter].width = adjusted_width
         
-        workbook.save(self.current_table_name + '.xlsx')
+        workbook.save(filepath)
 
     def export_to_pdf(self):
 
@@ -151,8 +157,9 @@ class ReportsWidget(BasicWidget):
             pdfmetrics.registerFont(TTFont('CyrillicFont', 'Helvetica'))
 
 
-
-        doc = SimpleDocTemplate(self.current_table_name + '.pdf', pagesize=landscape(A4))
+        reports_dir = "reports"
+        filepath = os.path.join(reports_dir, f"{self.current_table_name}.pdf")
+        doc = SimpleDocTemplate(filepath, pagesize=landscape(A4))
         elements = []
         
         df = pd.DataFrame(data = self.data, columns=[names_conversion[self.current_table_name][desc[0]] for desc in self.description])
@@ -162,7 +169,8 @@ class ReportsWidget(BasicWidget):
         title_style = styles['Title']
         title_style.fontName = 'CyrillicFont'
     
-        title_paragraph = Paragraph("Отчёт", title_style)
+        title_paragraph = Paragraph("Статистика по палатам" if self.current_table_name == 'ward_occupancy_report' else "Статистика по диагнозам"
+                                    , title_style)
         elements.append(title_paragraph)
         elements.append(Spacer(1, 20)) 
 
